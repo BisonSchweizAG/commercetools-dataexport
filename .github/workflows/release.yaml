@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        type: choice
+        description: 'Release type'
+        options:
+          - Major
+          - Minor
+          - Patch
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          build-scan-publish: false
+          cache: maven
+
+      - name: Build
+        run: ./gradlew build reckonTagPush -Preckon.stage=final -Preckon.scope=${{ github.event.inputs.releaseType }} --stacktrace
+
+      - name: Generate SBOM
+        run: ./gradlew cyclonedxBom
+
+      - name: Release
+        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
+        env:
+          # Define secrets at https://github.com/BisonSchweizAG/commercetools-datalift/settings
+          # ------------------------------------------------------------------------------
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USER }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_PASSWORD }}
+
