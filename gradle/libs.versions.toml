@@ -1,0 +1,26 @@
+[versions]
+junit-jupiter = '6.0.2'
+mockito = '5.21.0'
+assertj = '3.27.6'
+commercetools = '19.7.0'
+slf4j = '2.0.17'
+logback = '1.5.24'
+vanniktech-maven-publish = '0.35.0'
+reckon = '1.0.1'
+
+[libraries]
+commercetools-java-api = { module = "com.commercetools.sdk:commercetools-sdk-java-api", version.ref = "commercetools" }
+commercetools-okhttp-client4 = { module = "com.commercetools.sdk:commercetools-okhttp-client4", version.ref = "commercetools" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-jupiter" }
+junit-jupiter-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+[plugins]
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
+reckon = { id = "org.ajoberstar.reckon", version.ref = "reckon" }

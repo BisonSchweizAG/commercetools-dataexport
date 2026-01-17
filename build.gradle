@@ -1,0 +1,46 @@
+plugins {
+  alias(libs.plugins.reckon)
+  alias(libs.plugins.vanniktech.maven.publish)
+}
+
+reckon {
+  defaultInferredScope = 'minor'
+  snapshots()
+  scopeCalc = calcScopeFromProp()
+  stageCalc = calcStageFromProp()
+}
+
+group = 'tech.bison.commercetools-dataexport'
+
+subprojects {
+  apply plugin: 'java-library'
+  apply plugin: 'jacoco'
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+  }
+
+  test {
+    finalizedBy jacocoTestReport
+  }
+
+  jacocoTestReport {
+    dependsOn test
+  }
+
+  check.dependsOn jacocoTestReport
+
+  repositories {
+    if (project.hasProperty('REPO1_URL')) {
+      maven {
+        url REPO1_URL
+      }
+    } else {
+      mavenCentral()
+      maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    }
+
+  }
+}

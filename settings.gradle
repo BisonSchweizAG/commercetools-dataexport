@@ -1,0 +1,4 @@
+rootProject.name = 'commercetools-dataexport'
+
+
+include 'dataexport-core'
