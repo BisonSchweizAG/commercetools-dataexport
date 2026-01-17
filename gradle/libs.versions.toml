@@ -7,6 +7,7 @@ slf4j = '2.0.17'
 logback = '1.5.24'
 vanniktech-maven-publish = '0.35.0'
 reckon = '1.0.1'
+apache-commons-csv = '1.14.1'
 
 [libraries]
 commercetools-java-api = { module = "com.commercetools.sdk:commercetools-sdk-java-api", version.ref = "commercetools" }
@@ -20,6 +21,7 @@ mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons-csv" }
 
 [plugins]
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }

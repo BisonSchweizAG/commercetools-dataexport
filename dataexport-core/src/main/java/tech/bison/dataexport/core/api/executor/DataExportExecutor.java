@@ -15,14 +15,16 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.command.DataExportResult;
-import tech.bison.dataexport.core.api.command.DataLoader;
-import tech.bison.dataexport.core.api.command.ResourceExportData;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.internal.writer.CsvDataWriter;
 
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
@@ -31,22 +33,33 @@ public class DataExportExecutor {
 
     private final static Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
     private final CloudStorageUploader cloudStorageUploader;
+    private final DataExporterProvider dataExporterProvider;
 
     public DataExportExecutor(CloudStorageUploader cloudStorageUploader) {
-        this.cloudStorageUploader = cloudStorageUploader;
+        this(cloudStorageUploader, DataExporter::from);
     }
 
-    public DataExportResult execute(Context context, List<DataLoader> dataLoaders) {
+    public DataExportExecutor(CloudStorageUploader cloudStorageUploader, DataExporterProvider dataExporterProvider) {
+        this.cloudStorageUploader = cloudStorageUploader;
+        this.dataExporterProvider = dataExporterProvider;
+    }
+
+    public DataExportResult execute(Context context) {
         DataExportResult dataExportResult = DataExportResult.empty();
-        for (var dataLoader : dataLoaders) {
-            LOG.info("Running data export for resource '{}'.", dataLoader.getResourceType().getName());
+        var resourceExportProperties = context.getResourceExportProperties();
+        for (var entry : resourceExportProperties.entrySet()) {
+            var resourceType = entry.getKey();
+            LOG.info("Running data export for resource '{}'.", entry.getKey().getName());
             try {
-                ResourceExportData exportData = dataLoader.load(context);
-                cloudStorageUploader.upload(exportData);
-                dataExportResult.addResult(dataLoader.getResourceType(), SUCCESS);
+                var dataExporter = dataExporterProvider.apply(entry.getValue());
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8), CSVFormat.DEFAULT.builder().setHeader("").get());
+                dataExporter.export(context, new CsvDataWriter(printer, entry.getValue()));
+                cloudStorageUploader.upload(byteArrayOutputStream.toByteArray());
+                dataExportResult.addResult(resourceType, SUCCESS);
             } catch (Exception ex) {
-                dataExportResult.addResult(dataLoader.getResourceType(), FAILED);
-                LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.", dataLoader.getResourceType().getName(), ex);
+                dataExportResult.addResult(resourceType, FAILED);
+                LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.", resourceType.getName(), ex);
             }
         }
         return dataExportResult;

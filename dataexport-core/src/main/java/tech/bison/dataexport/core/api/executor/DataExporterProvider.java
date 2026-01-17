@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.api.command;
+package tech.bison.dataexport.core.api.executor;
 
-import tech.bison.dataexport.core.api.executor.Context;
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 
-/**
- * Interface for loading data to be exported to cloud storage.
- */
-public interface DataLoader {
+import java.util.function.Function;
 
-    ResourceExportData load(Context context);
-
-    ExportableResourceType getResourceType();
+@FunctionalInterface
+public interface DataExporterProvider extends Function<DataExportProperties, DataExporter> {
 }

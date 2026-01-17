@@ -17,8 +17,8 @@ package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
 import tech.bison.dataexport.core.DataExport;
-import tech.bison.dataexport.core.api.command.ExportableResourceType;
 import tech.bison.dataexport.core.api.exception.DataExportException;
+import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 
 import java.time.Clock;
 import java.util.EnumMap;
@@ -31,7 +31,7 @@ public class FluentConfiguration implements Configuration {
     private ProjectApiRoot projectApiRoot;
     private Clock clock;
     private GcpCloudStorageProperties gcpCloudStorageProperties;
-    private Map<ExportableResourceType, DataExportProperties> exportPropertiesMap = new EnumMap<>(ExportableResourceType.class);
+    private final Map<ExportableResourceType, DataExportProperties> exportPropertiesMap = new EnumMap<>(ExportableResourceType.class);
 
     /**
      * @return The new fully-configured DataExport instance.

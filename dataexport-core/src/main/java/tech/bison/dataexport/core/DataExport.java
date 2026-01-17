@@ -15,26 +15,19 @@
  */
 package tech.bison.dataexport.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.command.DataExportResult;
 import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExportExecutor;
+import tech.bison.dataexport.core.api.executor.DataExportResult;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
-
-import java.util.List;
 
 /**
  * Entry point for a data cleanup run.
  */
 public class DataExport {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DataExport.class);
-
     private final Configuration configuration;
     private final DataExportExecutor dataExportExecutor;
 
@@ -77,7 +70,7 @@ public class DataExport {
     public DataExportResult execute() {
         try {
             var context = new Context(configuration);
-            return dataExportExecutor.execute(context, List.of());
+            return dataExportExecutor.execute(context);
         } catch (Exception ex) {
             throw new DataExportException("Error while executing data export.", ex);
         }

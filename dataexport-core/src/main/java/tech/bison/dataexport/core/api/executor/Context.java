@@ -20,32 +20,39 @@ import com.commercetools.api.defaultconfig.ApiRootBuilder;
 import io.vrap.rmf.base.client.oauth2.ClientCredentials;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
 import tech.bison.dataexport.core.api.configuration.Configuration;
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+
+import java.util.Map;
 
 public class Context {
 
-  private final Configuration configuration;
+    private final Configuration configuration;
 
-  public Context(Configuration configuration) {
-    this.configuration = configuration;
-  }
-
-  /**
-   * @return The commercetools api root object.
-   */
-  public ProjectApiRoot getProjectApiRoot() {
-    if (configuration.getApiRoot() != null) {
-      return configuration.getApiRoot();
+    public Context(Configuration configuration) {
+        this.configuration = configuration;
     }
-    return createProjectApiRoot(configuration.getApiProperties());
-  }
 
-  private ProjectApiRoot createProjectApiRoot(CommercetoolsProperties properties) {
-    return ApiRootBuilder.of().defaultClient(
-            ClientCredentials.of().withClientId(properties.clientId())
-                .withClientSecret(properties.clientSecret())
-                .build(),
-            properties.authUrl(), properties.apiUrl())
-        .build(properties.projectKey());
-  }
+    /**
+     * @return The commercetools api root object.
+     */
+    public ProjectApiRoot getProjectApiRoot() {
+        if (configuration.getApiRoot() != null) {
+            return configuration.getApiRoot();
+        }
+        return createProjectApiRoot(configuration.getApiProperties());
+    }
+
+    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
+        return configuration.getResourceExportProperties();
+    }
+
+    private ProjectApiRoot createProjectApiRoot(CommercetoolsProperties properties) {
+        return ApiRootBuilder.of().defaultClient(
+                        ClientCredentials.of().withClientId(properties.clientId())
+                                .withClientSecret(properties.clientSecret())
+                                .build(),
+                        properties.authUrl(), properties.apiUrl())
+                .build(properties.projectKey());
+    }
 
 }

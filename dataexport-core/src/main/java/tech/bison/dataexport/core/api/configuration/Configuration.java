@@ -16,7 +16,7 @@
 package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
-import tech.bison.dataexport.core.api.command.ExportableResourceType;
+import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 
 import java.time.Clock;
 import java.util.Map;

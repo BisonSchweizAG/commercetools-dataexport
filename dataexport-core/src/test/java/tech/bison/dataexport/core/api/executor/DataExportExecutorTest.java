@@ -18,21 +18,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.bison.dataexport.core.api.command.DataExportResult;
-import tech.bison.dataexport.core.api.command.DataLoader;
-import tech.bison.dataexport.core.api.command.ExportableResourceType;
-import tech.bison.dataexport.core.api.command.ResourceExportData;
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
-import static tech.bison.dataexport.core.api.command.ExportableResourceType.CUSTOMER;
-import static tech.bison.dataexport.core.api.command.ExportableResourceType.ORDER;
+import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
+import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
 @ExtendWith(MockitoExtension.class)
 class DataExportExecutorTest {
@@ -43,23 +41,28 @@ class DataExportExecutorTest {
     @Test
     public void execute_allDataExportCommands() {
         var context = mock(Context.class);
-        var successfulExportLoader = mock(DataLoader.class);
-        var orderExportData = new ResourceExportData(ExportableResourceType.ORDER, new byte[0]);
+        var orderProperties = new DataExportProperties(ORDER, List.of());
+        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
+        when(context.getResourceExportProperties()).thenReturn(Map.of(ORDER, orderProperties, CUSTOMER, customerProperties));
+        var exporterSuccess = mock(DataExporter.class);
 
-        when(successfulExportLoader.load(context)).thenReturn(orderExportData);
-        when(successfulExportLoader.getResourceType()).thenReturn(ORDER);
+        var exporterFailure = mock(DataExporter.class);
+        doThrow(RuntimeException.class).when(exporterFailure).export(any(), any());
 
-        var failingExportLoader = mock(DataLoader.class);
-        when(failingExportLoader.load(context)).thenThrow(RuntimeException.class);
-        when(failingExportLoader.getResourceType()).thenReturn(CUSTOMER);
+        DataExporterProvider dataExporterProvider = (properties) -> {
+            if (properties.resourceType() == ORDER) {
+                return exporterSuccess;
+            } else {
+                return exporterFailure;
+            }
+        };
 
-        var executor = new DataExportExecutor(cloudStorageUploader);
-        List<DataLoader> commands = List.of(successfulExportLoader, failingExportLoader);
+        var executor = new DataExportExecutor(cloudStorageUploader, dataExporterProvider);
 
-        DataExportResult result = executor.execute(context, commands);
+        DataExportResult result = executor.execute(context);
 
         assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
-        verify(cloudStorageUploader, Mockito.times(1)).upload(any(ResourceExportData.class));
+        verify(cloudStorageUploader, Mockito.times(1)).upload(any(byte[].class));
         assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
     }
 }

@@ -1,68 +1,69 @@
 plugins {
-  alias(libs.plugins.vanniktech.maven.publish)
+    alias(libs.plugins.vanniktech.maven.publish)
 }
 
 configurations {
-  mockitoAgent
+    mockitoAgent
 }
 
 dependencies {
-  implementation libs.commercetools.java.api
-  implementation libs.slf4j
+    implementation libs.commercetools.java.api
+    implementation libs.slf4j
+    implementation libs.apache.commons.csv
 
 
-  testImplementation libs.junit.jupiter.api
-  testImplementation libs.junit.jupiter.params
-  testImplementation libs.mockito.junit.jupiter
-  testImplementation libs.assertj.core
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.params
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
 
-  testRuntimeOnly libs.junit.jupiter.engine
-  testRuntimeOnly libs.junit.jupiter.platform.launcher
-  testRuntimeOnly libs.logback
-  runtimeOnly libs.commercetools.okhttp.client4
-  mockitoAgent(libs.mockito) {
-    transitive = false
-  }
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.jupiter.platform.launcher
+    testRuntimeOnly libs.logback
+    runtimeOnly libs.commercetools.okhttp.client4
+    mockitoAgent(libs.mockito) {
+        transitive = false
+    }
 }
 
 mavenPublishing {
-  publishToMavenCentral()
-  signAllPublications()
-  coordinates("tech.bison", "commercetools-dataexport-core", "${project.version}")
+    publishToMavenCentral()
+    signAllPublications()
+    coordinates("tech.bison", "commercetools-dataexport-core", "${project.version}")
 
-  pom {
-    name = "commercetools dataexport core"
-    description = "commercetools data export is a data export tool for commercetools."
-    inceptionYear = "2024"
-    url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
-    licenses {
-      license {
-        name = "The Apache License, Version 2.0"
-        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-        distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-      }
+    pom {
+        name = "commercetools dataexport core"
+        description = "commercetools data export is a data export tool for commercetools."
+        inceptionYear = "2024"
+        url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+        developers {
+            developer {
+                id = "BisonSchweizAG"
+                name = "Bison Schweiz AG"
+                url = "https://github.com/BisonSchweizAG"
+            }
+        }
+        scm {
+            url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
+            connection = "scm:git:git://github.com/BisonSchweizAG/commercetools-dataexport.git"
+            developerConnection = "scm:git:ssh://git@github.com/BisonSchweizAG/commercetools-dataexport.git"
+        }
     }
-    developers {
-      developer {
-        id = "BisonSchweizAG"
-        name = "Bison Schweiz AG"
-        url = "https://github.com/BisonSchweizAG"
-      }
-    }
-    scm {
-      url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
-      connection = "scm:git:git://github.com/BisonSchweizAG/commercetools-dataexport.git"
-      developerConnection = "scm:git:ssh://git@github.com/BisonSchweizAG/commercetools-dataexport.git"
-    }
-  }
 }
 
 test {
-  useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 tasks {
-  test {
-    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
-  }
+    test {
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    }
 }
