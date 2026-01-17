@@ -17,9 +17,12 @@ package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
 import tech.bison.dataexport.core.DataExport;
+import tech.bison.dataexport.core.api.command.ExportableResourceType;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 
 import java.time.Clock;
+import java.util.EnumMap;
+import java.util.Map;
 
 
 public class FluentConfiguration implements Configuration {
@@ -27,6 +30,8 @@ public class FluentConfiguration implements Configuration {
     private CommercetoolsProperties apiProperties;
     private ProjectApiRoot projectApiRoot;
     private Clock clock;
+    private GcpCloudStorageProperties gcpCloudStorageProperties;
+    private Map<ExportableResourceType, DataExportProperties> exportPropertiesMap = new EnumMap<>(ExportableResourceType.class);
 
     /**
      * @return The new fully-configured DataExport instance.
@@ -58,6 +63,22 @@ public class FluentConfiguration implements Configuration {
         return this;
     }
 
+    /**
+     * Configure the GCP cloud storage.
+     */
+    public FluentConfiguration withGcpCloudStorageProperties(GcpCloudStorageProperties gcpCloudStorageProperties) {
+        this.gcpCloudStorageProperties = gcpCloudStorageProperties;
+        return this;
+    }
+
+    /**
+     * Configures predicates for the given resource types which should be deleted. Multiple predicates are combined to an or query.
+     */
+    public FluentConfiguration withPredicates(Map<ExportableResourceType, DataExportProperties> exportPropertiesMap) {
+        this.exportPropertiesMap.putAll(exportPropertiesMap);
+        return this;
+    }
+
 
     public FluentConfiguration withClock(Clock clock) {
         this.clock = clock;
@@ -81,4 +102,12 @@ public class FluentConfiguration implements Configuration {
         return clock;
     }
 
+    public GcpCloudStorageProperties getGcpCloudStorageProperties() {
+        return gcpCloudStorageProperties;
+    }
+
+    @Override
+    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
+        return exportPropertiesMap;
+    }
 }

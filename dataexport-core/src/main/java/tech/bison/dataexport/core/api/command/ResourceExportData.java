@@ -15,7 +15,21 @@
  */
 package tech.bison.dataexport.core.api.command;
 
-public record ResourceExportSummary(int deleteCount) {
+public class ResourceExportData {
 
+    private final ExportableResourceType resourceType;
+    private final byte[] data;
 
+    public ResourceExportData(ExportableResourceType resourceType, byte[] data) {
+        this.resourceType = resourceType;
+        this.data = data;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public ExportableResourceType getResourceType() {
+        return resourceType;
+    }
 }

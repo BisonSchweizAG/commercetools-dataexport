@@ -15,22 +15,24 @@
  */
 package tech.bison.dataexport.core.api.command;
 
+import tech.bison.dataexport.core.api.ResourceExportResult;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class ExportResult {
+public class DataExportResult {
 
-  private final Map<ExportableResourceType, ResourceExportSummary> resourceExportSummaryMap = new HashMap<>();
+    private final Map<ExportableResourceType, ResourceExportResult> resourceExportSummaryMap = new HashMap<>();
 
-  public static ExportResult empty() {
-    return new ExportResult();
-  }
+    public static DataExportResult empty() {
+        return new DataExportResult();
+    }
 
-  public void addResult(ExportableResourceType resourceType, ResourceExportSummary summary) {
-    resourceExportSummaryMap.put(resourceType, summary);
-  }
+    public void addResult(ExportableResourceType resourceType, ResourceExportResult exportResult) {
+        resourceExportSummaryMap.put(resourceType, exportResult);
+    }
 
-  public ResourceExportSummary getResourceSummary(ExportableResourceType resourceType) {
-    return resourceExportSummaryMap.get(resourceType);
-  }
+    public ResourceExportResult getResourceSummary(ExportableResourceType resourceType) {
+        return resourceExportSummaryMap.get(resourceType);
+    }
 }

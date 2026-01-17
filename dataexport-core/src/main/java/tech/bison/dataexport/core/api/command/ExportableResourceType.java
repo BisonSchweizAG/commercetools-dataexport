@@ -16,15 +16,16 @@
 package tech.bison.dataexport.core.api.command;
 
 public enum ExportableResourceType {
-  ORDER("order");
+    ORDER("order"),
+    CUSTOMER("customer");
 
-  private final String name;
+    private final String name;
 
-  ExportableResourceType(String name) {
-    this.name = name;
-  }
+    ExportableResourceType(String name) {
+        this.name = name;
+    }
 
-  public String getName() {
-    return name;
-  }
+    public String getName() {
+        return name;
+    }
 }

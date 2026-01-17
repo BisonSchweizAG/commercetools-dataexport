@@ -18,11 +18,11 @@ package tech.bison.dataexport.core.api.command;
 import tech.bison.dataexport.core.api.executor.Context;
 
 /**
- * Interface for an export command.
+ * Interface for loading data to be exported to cloud storage.
  */
-public interface ExportCommand {
+public interface DataLoader {
 
-  ResourceExportSummary execute(Context context);
+    ResourceExportData load(Context context);
 
-  ExportableResourceType getResourceType();
+    ExportableResourceType getResourceType();
 }

@@ -15,24 +15,40 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.command.ExportCommand;
-import tech.bison.dataexport.core.api.command.ExportResult;
-import tech.bison.dataexport.core.api.command.ResourceExportSummary;
+import tech.bison.dataexport.core.api.command.DataExportResult;
+import tech.bison.dataexport.core.api.command.DataLoader;
+import tech.bison.dataexport.core.api.command.ResourceExportData;
+import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+
+import java.util.List;
+
+import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
+import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
 
 public class DataExportExecutor {
 
-  private final static Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
+    private final static Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
+    private final CloudStorageUploader cloudStorageUploader;
 
-  public ExportResult execute(Context context, List<ExportCommand> exportCommands) {
-    ExportResult cleanupResult = ExportResult.empty();
-    for (var cleanupCommand : exportCommands) {
-      LOG.info("Running data export for resource '{}'.", cleanupCommand.getResourceType().getName());
-      ResourceExportSummary resourceExportSummary = cleanupCommand.execute(context);
-      cleanupResult.addResult(cleanupCommand.getResourceType(), resourceExportSummary);
+    public DataExportExecutor(CloudStorageUploader cloudStorageUploader) {
+        this.cloudStorageUploader = cloudStorageUploader;
     }
-    return cleanupResult;
-  }
+
+    public DataExportResult execute(Context context, List<DataLoader> dataLoaders) {
+        DataExportResult dataExportResult = DataExportResult.empty();
+        for (var dataLoader : dataLoaders) {
+            LOG.info("Running data export for resource '{}'.", dataLoader.getResourceType().getName());
+            try {
+                ResourceExportData exportData = dataLoader.load(context);
+                cloudStorageUploader.upload(exportData);
+                dataExportResult.addResult(dataLoader.getResourceType(), SUCCESS);
+            } catch (Exception ex) {
+                dataExportResult.addResult(dataLoader.getResourceType(), FAILED);
+                LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.", dataLoader.getResourceType().getName(), ex);
+            }
+        }
+        return dataExportResult;
+    }
 }
