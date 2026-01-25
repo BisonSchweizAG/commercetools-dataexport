@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.api.executor;
+package tech.bison.dataexport.core.internal.exector;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.bison.dataexport.core.api.executor.Context;
+import tech.bison.dataexport.core.api.executor.DataExportResult;
+import tech.bison.dataexport.core.api.executor.DataExporter;
+import tech.bison.dataexport.core.api.executor.DataExporterProvider;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
-import tech.bison.dataexport.core.internal.writer.CsvDataWriter;
+import tech.bison.dataexport.core.internal.exporter.order.OrderDataCsvWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -54,7 +58,7 @@ public class DataExportExecutor {
                 var dataExporter = dataExporterProvider.apply(entry.getValue());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8), CSVFormat.DEFAULT.builder().setHeader("").get());
-                dataExporter.export(context, new CsvDataWriter(printer, entry.getValue()));
+                dataExporter.export(context, new OrderDataCsvWriter(printer, entry.getValue()));
                 cloudStorageUploader.upload(byteArrayOutputStream.toByteArray());
                 dataExportResult.addResult(resourceType, SUCCESS);
             } catch (Exception ex) {

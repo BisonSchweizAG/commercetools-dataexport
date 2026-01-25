@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package tech.bison.dataexport.core.api.configuration;
 
-public record CommercetoolsProperties(String clientId, String clientSecret, String apiUrl, String authUrl, String projectKey) {
+public record CommercetoolsProperties(String clientId, String clientSecret, String apiUrl, String authUrl,
+                                      String projectKey) {
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package tech.bison.dataexport.core.api.exception;
 
 public class DataExportException extends RuntimeException {
 
-  public DataExportException(String message, Throwable throwable) {
-    super(message, throwable);
-  }
+    public DataExportException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
 
-  public DataExportException(String message) {
-    super(message);
-  }
+    public DataExportException(String message) {
+        super(message);
+    }
 }

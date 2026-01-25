@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core;
+package tech.bison.dataexport.core.api;
 
 import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.Context;
-import tech.bison.dataexport.core.api.executor.DataExportExecutor;
 import tech.bison.dataexport.core.api.executor.DataExportResult;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
 
 /**
@@ -44,14 +44,14 @@ public class DataExport {
     }
 
     /**
-     * This is your starting point. This creates a configuration which can be customized to your needs before being loaded into a new DataCleanup instance using the load() method.
+     * This is your starting point. This creates a configuration which can be customized to your needs before being loaded into a new DataExport instance using the load() method.
      * <p>
-     * In its simplest form, this is how you configure DataCleanup with all defaults to get started:
-     * <pre>DataCleanup dataCleanup = DataCleanup.configure().withApiUrl(..).load();</pre>
+     * In its simplest form, this is how you configure DataExport with all defaults to get started:
+     * <pre>DataExport dataCleanup = DataExport.configure().withApiUrl(..).load();</pre>
      * <p>
-     * After that you have a fully-configured DataCleanup instance and you can call migrate()
+     * After that you have a fully-configured DataExport instance and you can call execute()
      *
-     * @return A new configuration from which DataCleanup can be loaded.
+     * @return A new configuration from which DataExport can be loaded.
      */
     public static FluentConfiguration configure() {
         return new FluentConfiguration();

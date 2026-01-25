@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 package tech.bison.dataexport.core.api.executor;
 
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-import tech.bison.dataexport.core.internal.exporter.CustomerDataExporter;
-import tech.bison.dataexport.core.internal.exporter.OrderDataExporter;
+import tech.bison.dataexport.core.internal.exporter.customer.CustomerDataExporter;
+import tech.bison.dataexport.core.internal.exporter.order.OrderDataExporter;
 
 /**
  * Interface for exporting data.
  */
 public interface DataExporter {
 
-    void export(Context context, DataWriter dataWriter);
+    <T> void export(Context context, DataWriter<T> dataWriter);
 
     static DataExporter from(DataExportProperties dataExportProperties) {
         return switch (dataExportProperties.resourceType()) {

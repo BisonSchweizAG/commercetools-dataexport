@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2000 - 2024 Bison Schweiz AG
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
 
 import java.util.List;
 import java.util.Map;
