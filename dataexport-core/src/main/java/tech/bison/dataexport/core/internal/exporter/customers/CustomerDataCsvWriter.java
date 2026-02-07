@@ -13,52 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.internal.exporter.order;
+package tech.bison.dataexport.core.internal.exporter.customers;
 
-import com.commercetools.api.models.common.CentPrecisionMoney;
-import com.commercetools.api.models.order.Order;
+import com.commercetools.api.models.common.BaseResource;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrderDataCsvWriter implements DataWriter<Order> {
+public class CustomerDataCsvWriter implements DataWriter {
 
     private final CSVPrinter csvPrinter;
     private final DataExportProperties dataExportProperties;
     private final ObjectMapper objectMapper;
 
-    public OrderDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties) {
+    public CustomerDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties, ObjectMapper objectMapper) {
         this.csvPrinter = csvPrinter;
         this.dataExportProperties = dataExportProperties;
-        this.objectMapper = JsonUtils.createObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper = objectMapper;
     }
 
     @Override
-    public void writeRow(Order source) throws IOException {
+    public void writeRow(BaseResource source) {
         JsonNode node = objectMapper.valueToTree(source);
         List<String> values = new ArrayList<>();
         for (String field : dataExportProperties.fields()) {
             String pointer = "/" + field.replace(".", "/");
             JsonNode value = node.at(pointer);
-            if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
-                double amount = value.get("centAmount").asInt() / 100d;
-                values.add(String.valueOf(amount));
-            } else {
-                values.add(value.asText(""));
-            }
-
+            values.add(value.asText(""));
         }
-        csvPrinter.printRecord(values);
+        try {
+            csvPrinter.printRecord(values);
+        } catch (IOException e) {
+            throw new DataExportException(String.format("Could not write customer '%s'", source.getId()), e);
+        }
     }
 }

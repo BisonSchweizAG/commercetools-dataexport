@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.internal.exporter.order;
+package tech.bison.dataexport.core.internal.exporter.orders;
 
 import com.commercetools.api.models.common.CentPrecisionMoney;
 import com.commercetools.api.models.order.Order;
+import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
@@ -36,7 +37,7 @@ class OrderDataCsvWriterTest {
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
         var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "customerId", "createdAt"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties);
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .id("order-id")
@@ -54,7 +55,7 @@ class OrderDataCsvWriterTest {
     void writeRow_centPrecisionPriceField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
         var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("totalPrice"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties);
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .totalPrice(CentPrecisionMoney.builder().centAmount(195L).currencyCode("CHF").fractionDigits(2).buildUnchecked())

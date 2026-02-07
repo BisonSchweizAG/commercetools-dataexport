@@ -16,15 +16,15 @@
 package tech.bison.dataexport.core.api.executor;
 
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-import tech.bison.dataexport.core.internal.exporter.customer.CustomerDataExporter;
-import tech.bison.dataexport.core.internal.exporter.order.OrderDataExporter;
+import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
 
 /**
  * Interface for exporting data.
  */
 public interface DataExporter {
 
-    <T> void export(Context context, DataWriter<T> dataWriter);
+    void export(Context context, DataWriter dataWriter);
 
     static DataExporter from(DataExportProperties dataExportProperties) {
         return switch (dataExportProperties.resourceType()) {

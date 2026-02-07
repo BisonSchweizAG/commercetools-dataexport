@@ -15,8 +15,23 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import java.io.IOException;
+import com.commercetools.api.models.common.BaseResource;
+import io.vrap.rmf.base.client.utils.json.JsonUtils;
+import org.apache.commons.csv.CSVPrinter;
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
 
-public interface DataWriter<T> {
-    void writeRow(T object) throws IOException;
+public interface DataWriter {
+    void writeRow(BaseResource object);
+
+    static DataWriter csv(DataExportProperties dataExportProperties, CSVPrinter csvPrinter) {
+        var objectMapper = JsonUtils.createObjectMapper();
+        return switch (dataExportProperties.resourceType()) {
+            case ORDER -> new OrderDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+            case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+            default ->
+                    throw new IllegalArgumentException("Unsupported resource type: " + dataExportProperties.resourceType());
+        };
+    }
 }

@@ -38,6 +38,10 @@ class DataExportExecutorTest {
 
     @Mock
     private CloudStorageUploader cloudStorageUploader;
+    @Mock
+    private DataWriter customerDataWriter;
+    @Mock
+    private DataWriter orderDataWriter;
 
     @Test
     public void execute_allDataExportCommands() {
@@ -50,6 +54,16 @@ class DataExportExecutorTest {
         var exporterFailure = mock(DataExporter.class);
         doThrow(RuntimeException.class).when(exporterFailure).export(any(), any());
 
+        var executor = createDataExportExecutor(exporterSuccess, exporterFailure);
+
+        DataExportResult result = executor.execute(context);
+
+        assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
+        verify(cloudStorageUploader, Mockito.times(1)).upload(any(byte[].class));
+        assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
+    }
+
+    private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
         DataExporterProvider dataExporterProvider = (properties) -> {
             if (properties.resourceType() == ORDER) {
                 return exporterSuccess;
@@ -58,12 +72,14 @@ class DataExportExecutorTest {
             }
         };
 
-        var executor = new DataExportExecutor(cloudStorageUploader, dataExporterProvider);
+        DataWriterProvider dataWriterProvider = (properties, csvPrinter) -> {
+            if (properties.resourceType() == ORDER) {
+                return customerDataWriter;
+            } else {
+                return orderDataWriter;
+            }
+        };
 
-        DataExportResult result = executor.execute(context);
-
-        assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
-        verify(cloudStorageUploader, Mockito.times(1)).upload(any(byte[].class));
-        assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
+        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, dataWriterProvider);
     }
 }

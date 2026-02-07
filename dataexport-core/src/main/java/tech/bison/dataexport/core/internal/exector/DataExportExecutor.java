@@ -19,12 +19,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.executor.Context;
-import tech.bison.dataexport.core.api.executor.DataExportResult;
-import tech.bison.dataexport.core.api.executor.DataExporter;
-import tech.bison.dataexport.core.api.executor.DataExporterProvider;
+import tech.bison.dataexport.core.api.executor.*;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
-import tech.bison.dataexport.core.internal.exporter.order.OrderDataCsvWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -38,14 +34,16 @@ public class DataExportExecutor {
     private final static Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
     private final CloudStorageUploader cloudStorageUploader;
     private final DataExporterProvider dataExporterProvider;
+    private final DataWriterProvider dataWriterProvider;
 
     public DataExportExecutor(CloudStorageUploader cloudStorageUploader) {
-        this(cloudStorageUploader, DataExporter::from);
+        this(cloudStorageUploader, DataExporter::from, DataWriter::csv);
     }
 
-    public DataExportExecutor(CloudStorageUploader cloudStorageUploader, DataExporterProvider dataExporterProvider) {
+    public DataExportExecutor(CloudStorageUploader cloudStorageUploader, DataExporterProvider dataExporterProvider, DataWriterProvider dataWriterProvider) {
         this.cloudStorageUploader = cloudStorageUploader;
         this.dataExporterProvider = dataExporterProvider;
+        this.dataWriterProvider = dataWriterProvider;
     }
 
     public DataExportResult execute(Context context) {
@@ -55,10 +53,11 @@ public class DataExportExecutor {
             var resourceType = entry.getKey();
             LOG.info("Running data export for resource '{}'.", entry.getKey().getName());
             try {
-                var dataExporter = dataExporterProvider.apply(entry.getValue());
+                DataExporter dataExporter = dataExporterProvider.apply(entry.getValue());
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8), CSVFormat.DEFAULT.builder().setHeader("").get());
-                dataExporter.export(context, new OrderDataCsvWriter(printer, entry.getValue()));
+                DataWriter dataWriter = dataWriterProvider.apply(entry.getValue(), printer);
+                dataExporter.export(context, dataWriter);
                 cloudStorageUploader.upload(byteArrayOutputStream.toByteArray());
                 dataExportResult.addResult(resourceType, SUCCESS);
             } catch (Exception ex) {

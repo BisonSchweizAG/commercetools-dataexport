@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.internal.exporter.order;
+package tech.bison.dataexport.core.internal.exporter.customers;
 
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
-public class OrderDataExporter implements DataExporter {
+public class CustomerDataExporter implements DataExporter {
+
 
     @Override
-    public <Order> void export(Context context, DataWriter<Order> dataWriter) {
-
+    public void export(Context context, DataWriter dataWriter) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 }

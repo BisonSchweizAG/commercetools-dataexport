@@ -8,6 +8,7 @@ logback = '1.5.24'
 vanniktech-maven-publish = '0.35.0'
 reckon = '1.0.1'
 apache-commons-csv = '1.14.1'
+wiremock = '3.13.2'
 
 [libraries]
 commercetools-java-api = { module = "com.commercetools.sdk:commercetools-sdk-java-api", version.ref = "commercetools" }
@@ -22,6 +23,7 @@ assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons-csv" }
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 
 [plugins]
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
