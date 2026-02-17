@@ -15,18 +15,53 @@
  */
 package tech.bison.dataexport.core.internal.storage.gcp;
 
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import java.io.FileInputStream;
+import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
+import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 
 public class GcpCloudStorageUploader implements CloudStorageUploader {
-    private final GcpCloudStorageProperties gcpCloudStorageProperties;
 
-    public GcpCloudStorageUploader(GcpCloudStorageProperties gcpCloudStorageProperties) {
-        this.gcpCloudStorageProperties = gcpCloudStorageProperties;
+  private static final Logger LOG = LoggerFactory.getLogger(GcpCloudStorageUploader.class);
+  private final GcpCloudStorageProperties gcpCloudStorageProperties;
+
+  public GcpCloudStorageUploader(GcpCloudStorageProperties gcpCloudStorageProperties) {
+    this.gcpCloudStorageProperties = gcpCloudStorageProperties;
+  }
+
+  @Override
+  public void upload(String name, byte[] data) {
+    try {
+      var storage = getStorage();
+      BlobId blobId = BlobId.of(gcpCloudStorageProperties.bucketName(), name);
+      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build();
+      Blob blob = storage.create(blobInfo, data);
+      LOG.info("Created blob '{}' in bucket '{}'", name, gcpCloudStorageProperties.bucketName());
+      LOG.debug("The hash of the created blob is {}", blob.getMd5ToHexString());
+    } catch (IOException e) {
+      throw new DataExportException(
+          String.format("Error while uploading blob data with name '%s' to google cloud storage.", name), e);
     }
+  }
 
-    @Override
-    public void upload(byte[] data) {
-
+  private Storage getStorage() throws IOException {
+    var storageBuilder = StorageOptions.newBuilder().setProjectId(gcpCloudStorageProperties.projectId());
+    if (!StringUtils.isEmpty(gcpCloudStorageProperties.credentialPath())) {
+      var credentials = GoogleCredentials.fromStream(new FileInputStream(gcpCloudStorageProperties.credentialPath()))
+          .createScoped("https://www.googleapis.com/auth/cloud-platform");
+      credentials.refreshIfExpired();
+      storageBuilder.setCredentials(credentials);
     }
+    return storageBuilder.build().getService();
+  }
 }

@@ -10,7 +10,7 @@ dependencies {
     implementation libs.commercetools.java.api
     implementation libs.slf4j
     implementation libs.apache.commons.csv
-
+    implementation libs.google.cloud.storage
 
     testImplementation libs.junit.jupiter.api
     testImplementation libs.junit.jupiter.params

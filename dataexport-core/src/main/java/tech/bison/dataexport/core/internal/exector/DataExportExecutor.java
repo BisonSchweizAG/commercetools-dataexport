@@ -15,56 +15,75 @@
  */
 package tech.bison.dataexport.core.internal.exector;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.executor.*;
-import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
+import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-
-import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
-import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.bison.dataexport.core.api.executor.Context;
+import tech.bison.dataexport.core.api.executor.DataExportResult;
+import tech.bison.dataexport.core.api.executor.DataExporter;
+import tech.bison.dataexport.core.api.executor.DataExporterProvider;
+import tech.bison.dataexport.core.api.executor.DataWriter;
+import tech.bison.dataexport.core.api.executor.DataWriterProvider;
+import tech.bison.dataexport.core.api.executor.ExportableResourceType;
+import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 
 public class DataExportExecutor {
 
-    private final static Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
-    private final CloudStorageUploader cloudStorageUploader;
-    private final DataExporterProvider dataExporterProvider;
-    private final DataWriterProvider dataWriterProvider;
+  private static final Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
+  private final CloudStorageUploader cloudStorageUploader;
+  private final DataExporterProvider dataExporterProvider;
+  private final DataWriterProvider dataWriterProvider;
 
-    public DataExportExecutor(CloudStorageUploader cloudStorageUploader) {
-        this(cloudStorageUploader, DataExporter::from, DataWriter::csv);
-    }
 
-    public DataExportExecutor(CloudStorageUploader cloudStorageUploader, DataExporterProvider dataExporterProvider, DataWriterProvider dataWriterProvider) {
-        this.cloudStorageUploader = cloudStorageUploader;
-        this.dataExporterProvider = dataExporterProvider;
-        this.dataWriterProvider = dataWriterProvider;
-    }
+  public DataExportExecutor(CloudStorageUploader cloudStorageUploader) {
+    this(cloudStorageUploader, DataExporter::from, DataWriter::csv);
+  }
 
-    public DataExportResult execute(Context context) {
-        DataExportResult dataExportResult = DataExportResult.empty();
-        var resourceExportProperties = context.getResourceExportProperties();
-        for (var entry : resourceExportProperties.entrySet()) {
-            var resourceType = entry.getKey();
-            LOG.info("Running data export for resource '{}'.", entry.getKey().getName());
-            try {
-                DataExporter dataExporter = dataExporterProvider.apply(entry.getValue());
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8), CSVFormat.DEFAULT.builder().setHeader("").get());
-                DataWriter dataWriter = dataWriterProvider.apply(entry.getValue(), printer);
-                dataExporter.export(context, dataWriter);
-                cloudStorageUploader.upload(byteArrayOutputStream.toByteArray());
-                dataExportResult.addResult(resourceType, SUCCESS);
-            } catch (Exception ex) {
-                dataExportResult.addResult(resourceType, FAILED);
-                LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.", resourceType.getName(), ex);
-            }
-        }
-        return dataExportResult;
+  public DataExportExecutor(CloudStorageUploader cloudStorageUploader, DataExporterProvider dataExporterProvider,
+      DataWriterProvider dataWriterProvider) {
+    this.cloudStorageUploader = cloudStorageUploader;
+    this.dataExporterProvider = dataExporterProvider;
+    this.dataWriterProvider = dataWriterProvider;
+  }
+
+  public DataExportResult execute(Context context) {
+    DataExportResult dataExportResult = DataExportResult.empty();
+    var resourceExportProperties = context.getResourceExportProperties();
+    for (var entry : resourceExportProperties.entrySet()) {
+      var resourceType = entry.getKey();
+      LOG.info("Running data export for resource '{}'.", resourceType.getName());
+      try {
+        DataExporter dataExporter = dataExporterProvider.apply(entry.getValue());
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8),
+            CSVFormat.DEFAULT.builder().setHeader("").get());
+        DataWriter dataWriter = dataWriterProvider.apply(entry.getValue(), printer);
+        dataExporter.export(context, dataWriter);
+        cloudStorageUploader.upload(getBlobName(resourceType, context.getClock()), byteArrayOutputStream.toByteArray());
+        dataExportResult.addResult(resourceType, SUCCESS);
+        LOG.info("Data export finished successfully for resource '{}'.", resourceType.getName());
+      } catch (Exception ex) {
+        dataExportResult.addResult(resourceType, FAILED);
+        LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.",
+            resourceType.getName(), ex);
+      }
     }
+    return dataExportResult;
+  }
+
+  private String getBlobName(ExportableResourceType resourceType, Clock clock) {
+    return String.format("%ss/%ss_%s.csv", resourceType.getName(), resourceType.getName(),
+        LocalDateTime.now(clock).format(
+            DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")));
+  }
 }
