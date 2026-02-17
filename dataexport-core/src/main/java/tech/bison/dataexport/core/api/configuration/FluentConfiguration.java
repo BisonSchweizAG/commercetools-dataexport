@@ -49,7 +49,7 @@ public class FluentConfiguration implements Configuration {
     if (exportFieldsMap.isEmpty()) {
       throw new DataExportException("At least one export type must be configured.");
     }
-    if (!exportFieldsMap.values().stream().allMatch(fields -> !fields.fields().isEmpty())) {
+    if (exportFieldsMap.values().stream().anyMatch(fields -> fields.fields().isEmpty())) {
       throw new DataExportException("At least one export type has no fields configured.");
     }
     if (gcpCloudStorageProperties == null) {
