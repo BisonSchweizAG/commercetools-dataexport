@@ -15,11 +15,16 @@
  */
 package tech.bison.dataexport.core.internal.exporter.orders;
 
+import com.commercetools.api.models.cart.LineItem;
 import com.commercetools.api.models.common.CentPrecisionMoney;
 import com.commercetools.api.models.order.Order;
 import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 
@@ -28,10 +33,16 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class OrderDataCsvWriterTest {
+
+    @Captor
+    private ArgumentCaptor<List<String>> rowCaptor;
 
     @Test
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
@@ -49,6 +60,25 @@ class OrderDataCsvWriterTest {
         csvDataWriter.writeRow(order);
 
         verify(csvPrinter).printRecord(List.of("12345", "customer-id", "2026-12-20T10:00:00.000Z"));
+    }
+
+    @Test
+    void writeRow_withPositionFields_printCsvRecord() throws IOException {
+        var csvPrinter = mock(CSVPrinter.class);
+        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "lineItems.id", "lineItems.quantity"));
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+
+        var order = Order.builder()
+            .orderNumber("12345")
+            .lineItems(List.of(LineItem.builder().id("line-item-id").quantity(2L).buildUnchecked()))
+            .buildUnchecked();
+
+        doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
+
+        csvDataWriter.writeRow(order);
+
+        assertThat(rowCaptor.getAllValues().get(0)).isEqualTo(List.of("12345", "", ""));
+        assertThat(rowCaptor.getAllValues().get(1)).isEqualTo(List.of("", "line-item-id", "2"));
     }
 
     @Test

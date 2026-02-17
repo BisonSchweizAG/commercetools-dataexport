@@ -15,50 +15,91 @@
  */
 package tech.bison.dataexport.core.internal.exporter.orders;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 import com.commercetools.api.models.common.BaseResource;
 import com.commercetools.api.models.common.CentPrecisionMoney;
+import com.commercetools.api.models.order.Order;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class OrderDataCsvWriter implements DataWriter {
 
-    private final CSVPrinter csvPrinter;
-    private final DataExportProperties dataExportProperties;
-    private final ObjectMapper objectMapper;
+  private static final String LINE_ITEM_PREFIX = "lineItems.";
+  private final CSVPrinter csvPrinter;
+  private final DataExportProperties dataExportProperties;
+  private final ObjectMapper objectMapper;
 
-    public OrderDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties, ObjectMapper objectMapper) {
-        this.csvPrinter = csvPrinter;
-        this.dataExportProperties = dataExportProperties;
-        this.objectMapper = objectMapper;
+  public OrderDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties,
+      ObjectMapper objectMapper) {
+    this.csvPrinter = csvPrinter;
+    this.dataExportProperties = dataExportProperties;
+    this.objectMapper = objectMapper;
+  }
+
+  @Override
+  public void writeRow(BaseResource source) {
+    Order order = (Order) source;
+    JsonNode node = objectMapper.valueToTree(source);
+
+    var orderFields = dataExportProperties.fields().stream().filter(field -> !field.startsWith(LINE_ITEM_PREFIX))
+        .toList();
+    var lineItemFields = dataExportProperties.fields().stream().filter(field -> field.startsWith(LINE_ITEM_PREFIX))
+        .toList();
+    if (!lineItemFields.isEmpty()) {
+      writeRecordsWithLineItems(order, node, orderFields, lineItemFields);
+    } else {
+      List<String> values = new ArrayList<>();
+      for (String field : dataExportProperties.fields()) {
+        values.add(extractValue(node, field));
+      }
+      writeRecord(order, values);
     }
+  }
 
-    @Override
-    public void writeRow(BaseResource source) {
-        JsonNode node = objectMapper.valueToTree(source);
-        List<String> values = new ArrayList<>();
-        for (String field : dataExportProperties.fields()) {
-            String pointer = "/" + field.replace(".", "/");
-            JsonNode value = node.at(pointer);
-            if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
-                double amount = value.get("centAmount").asInt() / 100d;
-                values.add(String.valueOf(amount));
-            } else {
-                values.add(value.asText(""));
-            }
+  private void writeRecordsWithLineItems(Order order, JsonNode orderNode, List<String> orderFields,
+      List<String> lineItemFields) {
+    var orderRecord = Stream.concat(
+        orderFields.stream().map(f -> extractValue(orderNode, f)),
+        Collections.nCopies(lineItemFields.size(), "").stream()
+    ).toList();
+    writeRecord(order, orderRecord);
 
-        }
-        try {
-            csvPrinter.printRecord(values);
-        } catch (IOException e) {
-            throw new DataExportException(String.format("Could not write order '%s'", source.getId()), e);
-        }
+    for (var lineItem : order.getLineItems()) {
+      JsonNode lineItemNode = objectMapper.valueToTree(lineItem);
+      var lineItemRecord = Stream.concat(
+          Collections.nCopies(orderFields.size(), "").stream(),
+          lineItemFields.stream().map(f -> extractValue(lineItemNode, CS.removeStart(f, LINE_ITEM_PREFIX)))
+      ).toList();
+      writeRecord(order, lineItemRecord);
     }
+  }
+
+  private void writeRecord(Order order, List<String> values) {
+    try {
+      csvPrinter.printRecord(values);
+    } catch (IOException e) {
+      throw new DataExportException(String.format("Could not write order '%s'", order.getId()), e);
+    }
+  }
+
+  private String extractValue(JsonNode node, String field) {
+    String pointer = "/" + field.replace(".", "/");
+    JsonNode value = node.at(pointer);
+    if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
+      double amount = value.get("centAmount").asInt() / 100d;
+      return String.valueOf(amount);
+    } else {
+      return value.asText("");
+    }
+  }
 }
