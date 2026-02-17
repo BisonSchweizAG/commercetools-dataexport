@@ -17,21 +17,33 @@ package tech.bison.dataexport.core.api.executor;
 
 import com.commercetools.api.models.common.BaseResource;
 import io.vrap.rmf.base.client.utils.json.JsonUtils;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
 
 public interface DataWriter {
-    void writeRow(BaseResource object);
 
-    static DataWriter csv(DataExportProperties dataExportProperties, CSVPrinter csvPrinter) {
-        var objectMapper = JsonUtils.createObjectMapper();
-        return switch (dataExportProperties.resourceType()) {
-            case ORDER -> new OrderDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
-            case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
-            default ->
-                    throw new IllegalArgumentException("Unsupported resource type: " + dataExportProperties.resourceType());
-        };
+  void writeRow(BaseResource object);
+
+  static DataWriter csv(DataExportProperties dataExportProperties, OutputStream outputStream) {
+    try {
+      var csvPrinter = new CSVPrinter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8),
+          CSVFormat.DEFAULT.builder().setHeader(dataExportProperties.fields().toArray(new String[0])).get());
+      var objectMapper = JsonUtils.createObjectMapper();
+      return switch (dataExportProperties.resourceType()) {
+        case ORDER -> new OrderDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+        case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+      };
+    } catch (IOException e) {
+      throw new DataExportException("Error creating CSVPrinter.", e);
     }
+
+  }
 }

@@ -19,13 +19,9 @@ import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.bison.dataexport.core.api.executor.Context;
@@ -65,9 +61,7 @@ public class DataExportExecutor {
       try {
         DataExporter dataExporter = dataExporterProvider.apply(entry.getValue());
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(byteArrayOutputStream, StandardCharsets.UTF_8),
-            CSVFormat.DEFAULT.builder().setHeader("").get());
-        DataWriter dataWriter = dataWriterProvider.apply(entry.getValue(), printer);
+        DataWriter dataWriter = dataWriterProvider.create(entry.getValue(), byteArrayOutputStream);
         dataExporter.export(context, dataWriter);
         cloudStorageUploader.upload(getBlobName(resourceType, context.getClock()), byteArrayOutputStream.toByteArray());
         dataExportResult.addResult(resourceType, SUCCESS);
