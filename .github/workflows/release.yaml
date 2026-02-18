@@ -37,9 +37,6 @@ jobs:
       - name: Build
         run: ./gradlew build reckonTagPush -Preckon.stage=final -Preckon.scope=${{ github.event.inputs.releaseType }} --stacktrace
 
-      - name: Generate SBOM
-        run: ./gradlew cyclonedxBom
-
       - name: Release
         run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
         env:
