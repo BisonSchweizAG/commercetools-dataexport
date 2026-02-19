@@ -15,8 +15,6 @@
  */
 package tech.bison.dataexport.core.internal.exporter.orders;
 
-import static org.apache.commons.lang3.Strings.CS;
-
 import com.commercetools.api.models.common.BaseResource;
 import com.commercetools.api.models.common.CentPrecisionMoney;
 import com.commercetools.api.models.order.Order;
@@ -78,7 +76,7 @@ public class OrderDataCsvWriter implements DataWriter {
       JsonNode lineItemNode = objectMapper.valueToTree(lineItem);
       var lineItemRecord = Stream.concat(
           Collections.nCopies(orderFields.size(), "").stream(),
-          lineItemFields.stream().map(f -> extractValue(lineItemNode, CS.removeStart(f, LINE_ITEM_PREFIX)))
+          lineItemFields.stream().map(f -> extractValue(lineItemNode, f.replace(LINE_ITEM_PREFIX, "")))
       ).toList();
       writeRecord(order, lineItemRecord);
     }

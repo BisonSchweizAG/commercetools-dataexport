@@ -23,7 +23,6 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import java.io.FileInputStream;
 import java.io.IOException;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
@@ -56,7 +55,7 @@ public class GcpCloudStorageUploader implements CloudStorageUploader {
 
   private Storage getStorage() throws IOException {
     var storageBuilder = StorageOptions.newBuilder().setProjectId(gcpCloudStorageProperties.projectId());
-    if (!StringUtils.isEmpty(gcpCloudStorageProperties.credentialPath())) {
+    if (gcpCloudStorageProperties.credentialPath() != null && !gcpCloudStorageProperties.credentialPath().isEmpty()) {
       var credentials = GoogleCredentials.fromStream(new FileInputStream(gcpCloudStorageProperties.credentialPath()))
           .createScoped("https://www.googleapis.com/auth/cloud-platform");
       credentials.refreshIfExpired();
