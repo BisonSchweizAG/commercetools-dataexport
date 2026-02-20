@@ -18,6 +18,8 @@ package tech.bison.dataexport.core.internal.exporter.orders;
 import com.commercetools.api.models.cart.LineItem;
 import com.commercetools.api.models.common.CentPrecisionMoney;
 import com.commercetools.api.models.order.Order;
+import com.commercetools.api.models.product.Attribute;
+import com.commercetools.api.models.product.ProductVariant;
 import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import org.apache.commons.csv.CSVPrinter;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doNothing;
@@ -94,5 +97,64 @@ class OrderDataCsvWriterTest {
         csvDataWriter.writeRow(order);
 
         verify(csvPrinter).printRecord(List.of("1.95"));
+    }
+
+    @Test
+    void writeRow_withVariantAttributeField_printCsvRecord() throws IOException {
+        var csvPrinter = mock(CSVPrinter.class);
+        var properties = new DataExportProperties(ExportableResourceType.ORDER,
+            List.of("orderNumber", "lineItems.variant.attributes.color"));
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+
+        var order = Order.builder()
+            .orderNumber("12345")
+            .lineItems(List.of(LineItem.builder()
+                .id("line-item-id")
+                .variant(ProductVariant.builder()
+                    .attributes(List.of(Attribute.builder().name("color").value("blue").buildUnchecked()))
+                    .buildUnchecked())
+                .buildUnchecked()))
+            .buildUnchecked();
+
+        doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
+
+        csvDataWriter.writeRow(order);
+
+        assertThat(rowCaptor.getAllValues().get(0)).isEqualTo(List.of("12345", ""));
+        assertThat(rowCaptor.getAllValues().get(1)).isEqualTo(List.of("", "blue"));
+    }
+
+    @Test
+    void writeRow_withExpandedVariantReferenceAttributeField_printCsvRecord() throws IOException {
+        var csvPrinter = mock(CSVPrinter.class);
+        var properties = new DataExportProperties(ExportableResourceType.ORDER,
+            List.of("orderNumber", "lineItems.variant.attributes.supplierCategory.obj.name"));
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+
+        var supplierCategoryValue = Map.of(
+            "typeId", "category",
+            "id", "category-id",
+            "obj", Map.of("name", "Tools")
+        );
+
+        var order = Order.builder()
+            .orderNumber("12345")
+            .lineItems(List.of(LineItem.builder()
+                .id("line-item-id")
+                .variant(ProductVariant.builder()
+                    .attributes(List.of(Attribute.builder()
+                        .name("supplierCategory")
+                        .value(supplierCategoryValue)
+                        .buildUnchecked()))
+                    .buildUnchecked())
+                .buildUnchecked()))
+            .buildUnchecked();
+
+        doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
+
+        csvDataWriter.writeRow(order);
+
+        assertThat(rowCaptor.getAllValues().get(0)).isEqualTo(List.of("12345", ""));
+        assertThat(rowCaptor.getAllValues().get(1)).isEqualTo(List.of("", "Tools"));
     }
 }

@@ -33,6 +33,7 @@ class DataExporterIntegrationTest {
         var orderDataExporter = new OrderDataExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
 
         var orderDataWriter = mock(DataWriter.class);
@@ -47,10 +48,12 @@ class DataExporterIntegrationTest {
         var orderDataExporter = new OrderDataExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("offset", equalTo("50"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
 
         var orderDataWriter = mock(DataWriter.class);

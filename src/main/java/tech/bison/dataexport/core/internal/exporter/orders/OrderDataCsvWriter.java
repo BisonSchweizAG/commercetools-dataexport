@@ -33,6 +33,7 @@ import tech.bison.dataexport.core.api.executor.DataWriter;
 public class OrderDataCsvWriter implements DataWriter {
 
   private static final String LINE_ITEM_PREFIX = "lineItems.";
+  private static final String VARIANT_ATTRIBUTES_PREFIX = "variant.attributes.";
   private final CSVPrinter csvPrinter;
   private final DataExportProperties dataExportProperties;
   private final ObjectMapper objectMapper;
@@ -76,10 +77,44 @@ public class OrderDataCsvWriter implements DataWriter {
       JsonNode lineItemNode = objectMapper.valueToTree(lineItem);
       var lineItemRecord = Stream.concat(
           Collections.nCopies(orderFields.size(), "").stream(),
-          lineItemFields.stream().map(f -> extractValue(lineItemNode, f.replace(LINE_ITEM_PREFIX, "")))
+          lineItemFields.stream().map(f -> extractLineItemValue(lineItemNode, f.replace(LINE_ITEM_PREFIX, "")))
       ).toList();
       writeRecord(order, lineItemRecord);
     }
+  }
+
+  private String extractLineItemValue(JsonNode lineItemNode, String field) {
+    if (!field.startsWith(VARIANT_ATTRIBUTES_PREFIX)) {
+      return extractValue(lineItemNode, field);
+    }
+
+    String attributePath = field.substring(VARIANT_ATTRIBUTES_PREFIX.length());
+    if (attributePath.isBlank()) {
+      return "";
+    }
+
+    String attributeName = attributePath;
+    String nestedPath = null;
+    int nestedPathSeparatorIdx = attributePath.indexOf('.');
+    if (nestedPathSeparatorIdx >= 0) {
+      attributeName = attributePath.substring(0, nestedPathSeparatorIdx);
+      nestedPath = attributePath.substring(nestedPathSeparatorIdx + 1);
+    }
+
+    JsonNode attributes = lineItemNode.at("/variant/attributes");
+
+    for (JsonNode attribute : attributes) {
+      if (!attributeName.equals(attribute.path("name").asText())) {
+        continue;
+      }
+
+      JsonNode attributeValue = attribute.path("value");
+      if (nestedPath == null) {
+        return extractNodeValue(attributeValue);
+      }
+      return extractValue(attributeValue, nestedPath);
+    }
+    return "";
   }
 
   private void writeRecord(Order order, List<String> values) {
@@ -93,6 +128,10 @@ public class OrderDataCsvWriter implements DataWriter {
   private String extractValue(JsonNode node, String field) {
     String pointer = "/" + field.replace(".", "/");
     JsonNode value = node.at(pointer);
+    return extractNodeValue(value);
+  }
+
+  private String extractNodeValue(JsonNode value) {
     if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
       double amount = value.get("centAmount").asInt() / 100d;
       return String.valueOf(amount);
