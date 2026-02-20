@@ -18,6 +18,7 @@ package tech.bison.dataexport.core.api.configuration;
 import com.commercetools.api.client.ProjectApiRoot;
 import java.time.Clock;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import tech.bison.dataexport.core.api.DataExport;
 import tech.bison.dataexport.core.api.exception.DataExportException;
@@ -84,8 +85,8 @@ public class FluentConfiguration implements Configuration {
   /**
    * Configures the fields to be exported for the given resource types.
    */
-  public FluentConfiguration withExportFields(Map<ExportableResourceType, DataExportProperties> exportFieldsMap) {
-    this.exportFieldsMap.putAll(exportFieldsMap);
+  public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
+    this.exportFieldsMap.put(resourceType, new DataExportProperties(resourceType, exportFields));
     return this;
   }
 

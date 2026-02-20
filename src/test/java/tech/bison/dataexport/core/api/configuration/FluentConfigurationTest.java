@@ -20,7 +20,6 @@ import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORD
 
 import com.commercetools.api.client.ProjectApiRoot;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 
@@ -30,7 +29,7 @@ class FluentConfigurationTest {
   void load_withMissingApiConfiguration_throwsException() {
     var configuration = new FluentConfiguration()
         .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-        .withExportFields(Map.of(ORDER, new DataExportProperties(ORDER, List.of("id"))));
+        .withExportFields(ORDER, List.of("id"));
 
     assertThatThrownBy(configuration::load)
         .isInstanceOf(DataExportException.class)
@@ -53,7 +52,7 @@ class FluentConfigurationTest {
     var configuration = new FluentConfiguration()
         .withApiRoot(mock(ProjectApiRoot.class))
         .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-        .withExportFields(Map.of(ORDER, new DataExportProperties(ORDER, List.of())));
+        .withExportFields(ORDER, List.of());
 
     assertThatThrownBy(configuration::load)
         .isInstanceOf(DataExportException.class)
@@ -64,7 +63,7 @@ class FluentConfigurationTest {
   void load_withMissingGcpCloudStorageProperties_throwsException() {
     var configuration = new FluentConfiguration()
         .withApiRoot(mock(ProjectApiRoot.class))
-        .withExportFields(Map.of(ORDER, new DataExportProperties(ORDER, List.of("id"))));
+        .withExportFields(ORDER, List.of("id"));
 
     assertThatThrownBy(configuration::load)
         .isInstanceOf(DataExportException.class)
@@ -76,7 +75,7 @@ class FluentConfigurationTest {
     var configuration = new FluentConfiguration()
         .withApiProperties(createValidCommercetoolsProperties())
         .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-        .withExportFields(Map.of(ORDER, new DataExportProperties(ORDER, List.of("id"))));
+        .withExportFields(ORDER, List.of("id"));
 
     assertThat(configuration.load()).isNotNull();
   }
@@ -86,7 +85,7 @@ class FluentConfigurationTest {
     var configuration = new FluentConfiguration()
         .withApiRoot(mock(ProjectApiRoot.class))
         .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-        .withExportFields(Map.of(ORDER, new DataExportProperties(ORDER, List.of("id"))));
+        .withExportFields(ORDER, List.of("id"));
 
     assertThat(configuration.load()).isNotNull();
   }
@@ -96,10 +95,8 @@ class FluentConfigurationTest {
     var configuration = new FluentConfiguration()
         .withApiRoot(mock(ProjectApiRoot.class))
         .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-        .withExportFields(Map.of(
-            ORDER, new DataExportProperties(ORDER, List.of("id", "orderNumber")),
-            CUSTOMER, new DataExportProperties(CUSTOMER, List.of("id", "name"))
-        ));
+        .withExportFields(ORDER, List.of("id", "orderNumber"))
+        .withExportFields(CUSTOMER, List.of("id", "name"));
 
     assertThat(configuration.load()).isNotNull();
   }

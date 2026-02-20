@@ -15,7 +15,6 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
 
@@ -24,14 +23,12 @@ import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
  */
 public interface DataExporter {
 
-    void export(Context context, DataWriter dataWriter);
+  void export(Context context, DataWriter dataWriter);
 
-    static DataExporter from(DataExportProperties dataExportProperties) {
-        return switch (dataExportProperties.resourceType()) {
-            case ORDER -> new OrderDataExporter();
-            case CUSTOMER -> new CustomerDataExporter();
-            default ->
-                    throw new IllegalArgumentException("Unsupported resource type: " + dataExportProperties.resourceType());
-        };
-    }
+  static DataExporter from(ExportableResourceType resourceType) {
+    return switch (resourceType) {
+      case ORDER -> new OrderDataExporter();
+      case CUSTOMER -> new CustomerDataExporter();
+    };
+  }
 }

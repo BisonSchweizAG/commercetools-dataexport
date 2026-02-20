@@ -73,8 +73,8 @@ class DataExportExecutorTest {
   }
 
   private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
-    DataExporterProvider dataExporterProvider = properties -> {
-      if (properties.resourceType() == ORDER) {
+    DataExporterProvider dataExporterProvider = resourceType -> {
+      if (resourceType == ORDER) {
         return exporterSuccess;
       } else {
         return exporterFailure;

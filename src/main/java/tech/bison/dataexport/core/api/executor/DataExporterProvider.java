@@ -15,10 +15,9 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface DataExporterProvider extends Function<DataExportProperties, DataExporter> {
+public interface DataExporterProvider extends Function<ExportableResourceType, DataExporter> {
+
 }

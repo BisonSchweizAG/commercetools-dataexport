@@ -59,7 +59,7 @@ public class DataExportExecutor {
       var resourceType = entry.getKey();
       LOG.info("Running data export for resource '{}'.", resourceType.getName());
       try {
-        DataExporter dataExporter = dataExporterProvider.apply(entry.getValue());
+        DataExporter dataExporter = dataExporterProvider.apply(entry.getKey());
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataWriter dataWriter = dataWriterProvider.create(entry.getValue(), byteArrayOutputStream);
         dataExporter.export(context, dataWriter);
