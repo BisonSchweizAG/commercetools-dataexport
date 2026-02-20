@@ -43,7 +43,7 @@ public class GcpCloudStorageUploader implements CloudStorageUploader {
     try {
       var storage = getStorage();
       BlobId blobId = BlobId.of(gcpCloudStorageProperties.bucketName(), name);
-      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build();
+      BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/csv").build();
       Blob blob = storage.create(blobInfo, data);
       LOG.info("Created blob '{}' in bucket '{}'", name, gcpCloudStorageProperties.bucketName());
       LOG.debug("The hash of the created blob is {}", blob.getMd5ToHexString());
