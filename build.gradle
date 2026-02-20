@@ -1,46 +1,102 @@
 plugins {
-  alias(libs.plugins.reckon)
-  alias(libs.plugins.vanniktech.maven.publish)
+    id 'java-library'
+    id 'jacoco'
+    alias(libs.plugins.reckon)
+    alias(libs.plugins.vanniktech.maven.publish)
 }
 
 reckon {
-  defaultInferredScope = 'minor'
-  snapshots()
-  scopeCalc = calcScopeFromProp()
-  stageCalc = calcStageFromProp()
+    defaultInferredScope = 'minor'
+    snapshots()
+    scopeCalc = calcScopeFromProp()
+    stageCalc = calcStageFromProp()
 }
 
 group = 'tech.bison.commercetools-dataexport'
 
-subprojects {
-  apply plugin: 'java-library'
-  apply plugin: 'jacoco'
-  java {
+java {
     toolchain {
-      languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(25)
     }
     withSourcesJar()
-  }
+}
 
-  test {
-    finalizedBy jacocoTestReport
-  }
-
-  jacocoTestReport {
-    dependsOn test
-  }
-
-  check.dependsOn jacocoTestReport
-
-  repositories {
+repositories {
     if (project.hasProperty('REPO1_URL')) {
-      maven {
-        url REPO1_URL
-      }
+        maven {
+            url REPO1_URL
+        }
     } else {
-      mavenCentral()
-      maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
+}
 
-  }
+configurations {
+    mockitoAgent
+}
+
+dependencies {
+    implementation libs.commercetools.java.api
+    implementation libs.slf4j
+    implementation libs.apache.commons.csv
+    implementation libs.google.cloud.storage
+
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.params
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.assertj.core
+    testImplementation libs.wiremock
+
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.jupiter.platform.launcher
+    testRuntimeOnly libs.logback
+    runtimeOnly libs.commercetools.okhttp.client4
+    mockitoAgent(libs.mockito) {
+        transitive = false
+    }
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+}
+
+jacocoTestReport {
+    dependsOn test
+}
+
+check.dependsOn jacocoTestReport
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+    coordinates("tech.bison", "commercetools-dataexport", "${project.version}")
+
+    pom {
+        name = "commercetools dataexport"
+        description = "commercetools data export is a data export tool for commercetools."
+        inceptionYear = "2024"
+        url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+        developers {
+            developer {
+                id = "BisonSchweizAG"
+                name = "Bison Schweiz AG"
+                url = "https://github.com/BisonSchweizAG"
+            }
+        }
+        scm {
+            url = "https://github.com/BisonSchweizAG/commercetools-dataexport"
+            connection = "scm:git:git://github.com/BisonSchweizAG/commercetools-dataexport.git"
+            developerConnection = "scm:git:ssh://git@github.com/BisonSchweizAG/commercetools-dataexport.git"
+        }
+    }
 }
