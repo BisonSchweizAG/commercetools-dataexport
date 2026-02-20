@@ -35,6 +35,17 @@ DataExport dataExport = DataExport.configure()
     .load();
 ```
 
+Fields can be configured with the dot notation according to the commercetools api documentation.
+
+The money type centPrecision can be configured with a short hand notation by just referring to the parent field name.
+The exported value will be the centAmount divided by 100.
+Example:
+
+```
+DataExport.configure()
+    .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice","lineItems.taxedPrice.totalNet")
+```
+
 Some resource types support child items. Child items are added to the csv file below the parent item. For child item
 lines all parent field values will be empty. <br>Child item fields can be configured with the dot notation:
 
