@@ -1,10 +1,44 @@
 # commercetools Dataexport
 
-With commercetools Data Export you can export data from commercetools to a cloud storage.
+With commercetools Data Export you can export data from commercetools to csv files and upload them to a cloud storage.
+The exported data is always a full export of the corresponding resource type.
 
-## Releases
+The following commercetools resource types are supported:
 
-The first release will be available soon.
+- Orders
+
+The following cloud storage types are supported:
+
+- Google Cloud Storage
+
+## Usage
+
+### 1. Add dependency
+
+Add the data cleanup core module to your gradle or maven file.
+
+```groovy
+implementation "tech.bison:commercetools-dataexport:x.y.z"
+```
+
+(latest version numbers avaible
+on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name=commercetools-dataexport))
+
+### 2. Configure the export
+
+```java
+DataExport dataExport = DataExport.configure()
+    .withApiRoot(projectApiRoot)
+    .withExportFields(ExportableResourceType.ORDER,
+        List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+    .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
+    .load();
+```
+
+Some resource types support child items. Child items are added to the csv file below the parent item. For child item
+lines all parent field values will be empty. <br>Child item fields can be configured with the dot notation:
+
+- order: lineItems. Example: lineItems.id
 
 ## Building
 
