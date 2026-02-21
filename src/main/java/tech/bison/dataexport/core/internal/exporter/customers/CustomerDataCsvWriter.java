@@ -54,4 +54,13 @@ public class CustomerDataCsvWriter implements DataWriter {
             throw new DataExportException(String.format("Could not write customer '%s'", source.getId()), e);
         }
     }
+
+    @Override
+    public void flush() {
+        try {
+            csvPrinter.flush();
+        } catch (IOException e) {
+            throw new DataExportException("Could not flush customer csv writer.", e);
+        }
+    }
 }

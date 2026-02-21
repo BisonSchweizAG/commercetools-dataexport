@@ -32,6 +32,10 @@ public interface DataWriter {
 
   void writeRow(BaseResource object);
 
+  default void flush() {
+    // default no-op for non-CSV implementations
+  }
+
   static DataWriter csv(DataExportProperties dataExportProperties, OutputStream outputStream) {
     try {
       var csvPrinter = new CSVPrinter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8),

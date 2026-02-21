@@ -1,0 +1,38 @@
+{
+  "limit": 50,
+  "offset": 0,
+  "count": 1,
+  "total": 1,
+  "results": [
+    {
+      "type": "Order",
+      "id": "order-id-1",
+      "version": 1,
+      "orderNumber": "A-1000",
+      "customerId": "customer-123",
+      "createdAt": "2026-01-01T09:55:00.000Z",
+      "lineItems": [
+        {
+          "id": "line-item-1",
+          "quantity": 2,
+          "variant": {
+            "attributes": [
+              {
+                "name": "supplierCategory",
+                "value": {
+                  "typeId": "category",
+                  "id": "category-id-1",
+                  "obj": {
+                    "name": {
+                      "en": "Hardware"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

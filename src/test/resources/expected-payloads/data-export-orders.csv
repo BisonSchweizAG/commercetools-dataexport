@@ -1,0 +1,3 @@
+orderNumber,customerId,lineItems.id,lineItems.quantity
+A-1000,customer-123,,
+"",,line-item-1,2

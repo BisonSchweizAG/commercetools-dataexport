@@ -125,6 +125,15 @@ public class OrderDataCsvWriter implements DataWriter {
     }
   }
 
+  @Override
+  public void flush() {
+    try {
+      csvPrinter.flush();
+    } catch (IOException e) {
+      throw new DataExportException("Could not flush order csv writer.", e);
+    }
+  }
+
   private String extractValue(JsonNode node, String field) {
     String pointer = "/" + field.replace(".", "/");
     JsonNode value = node.at(pointer);

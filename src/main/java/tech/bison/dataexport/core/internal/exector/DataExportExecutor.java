@@ -63,6 +63,7 @@ public class DataExportExecutor {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataWriter dataWriter = dataWriterProvider.create(entry.getValue(), byteArrayOutputStream);
         dataExporter.export(context, dataWriter);
+        dataWriter.flush();
         cloudStorageUploader.upload(getBlobName(resourceType, context.getClock()), byteArrayOutputStream.toByteArray());
         dataExportResult.addResult(resourceType, SUCCESS);
         LOG.info("Data export finished successfully for resource '{}'.", resourceType.getName());
