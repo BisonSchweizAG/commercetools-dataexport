@@ -23,11 +23,17 @@
                   "typeId": "category",
                   "id": "category-id-1",
                   "obj": {
+                    "id": "category-id-1",
+                    "key": "hardware",
                     "name": {
                       "en": "Hardware"
                     }
                   }
                 }
+              },
+              {
+                "name": "color",
+                "value": "red"
               }
             ]
           }
