@@ -23,6 +23,8 @@ import java.util.Map;
 import tech.bison.dataexport.core.api.DataExport;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
+import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
 
 
 public class FluentConfiguration implements Configuration {
@@ -31,6 +33,7 @@ public class FluentConfiguration implements Configuration {
   private ProjectApiRoot projectApiRoot;
   private Clock clock;
   private GcpCloudStorageProperties gcpCloudStorageProperties;
+  private CloudStorageUploader cloudStorageUploader;
   private final Map<ExportableResourceType, DataExportProperties> exportFieldsMap = new EnumMap<>(
       ExportableResourceType.class);
 
@@ -39,6 +42,9 @@ public class FluentConfiguration implements Configuration {
    */
   public DataExport load() {
     validateConfiguration();
+    if (cloudStorageUploader == null) {
+      cloudStorageUploader = new GcpCloudStorageUploader(gcpCloudStorageProperties);
+    }
     return new DataExport(this);
   }
 
@@ -53,8 +59,8 @@ public class FluentConfiguration implements Configuration {
     if (exportFieldsMap.values().stream().anyMatch(fields -> fields.fields().isEmpty())) {
       throw new DataExportException("At least one export type has no fields configured.");
     }
-    if (gcpCloudStorageProperties == null) {
-      throw new DataExportException("GCP cloud storage configuration is missing.");
+    if (gcpCloudStorageProperties == null && cloudStorageUploader == null) {
+      throw new DataExportException("Cloud storage configuration is missing.");
     }
   }
 
@@ -79,6 +85,14 @@ public class FluentConfiguration implements Configuration {
    */
   public FluentConfiguration withGcpCloudStorageProperties(GcpCloudStorageProperties gcpCloudStorageProperties) {
     this.gcpCloudStorageProperties = gcpCloudStorageProperties;
+    return this;
+  }
+
+  /**
+   * Configure a custom cloud storage uploader.
+   */
+  public FluentConfiguration withCloudStorageUploader(CloudStorageUploader cloudStorageUploader) {
+    this.cloudStorageUploader = cloudStorageUploader;
     return this;
   }
 
@@ -115,6 +129,11 @@ public class FluentConfiguration implements Configuration {
 
   public GcpCloudStorageProperties getGcpCloudStorageProperties() {
     return gcpCloudStorageProperties;
+  }
+
+  @Override
+  public CloudStorageUploader getCloudStorageUploader() {
+    return cloudStorageUploader;
   }
 
   @Override

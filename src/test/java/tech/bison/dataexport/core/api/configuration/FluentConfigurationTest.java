@@ -22,6 +22,8 @@ import com.commercetools.api.client.ProjectApiRoot;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.bison.dataexport.core.api.exception.DataExportException;
+import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
 
 class FluentConfigurationTest {
 
@@ -67,7 +69,29 @@ class FluentConfigurationTest {
 
     assertThatThrownBy(configuration::load)
         .isInstanceOf(DataExportException.class)
-        .hasMessage("GCP cloud storage configuration is missing.");
+        .hasMessage("Cloud storage configuration is missing.");
+  }
+
+  @Test
+  void load_withCustomCloudStorageUploader_returnsDataExport() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withExportFields(ORDER, List.of("id"))
+        .withCloudStorageUploader(mock(CloudStorageUploader.class));
+
+    assertThat(configuration.load()).isNotNull();
+  }
+
+  @Test
+  void load_withGcpCloudStorageProperties_defaultsCloudStorageUploaderToGcp() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withExportFields(ORDER, List.of("id"))
+        .withGcpCloudStorageProperties(createValidCloudStorageConfiguration());
+
+    var dataExport = configuration.load();
+
+    assertThat(dataExport.getConfiguration().getCloudStorageUploader()).isInstanceOf(GcpCloudStorageUploader.class);
   }
 
   @Test
