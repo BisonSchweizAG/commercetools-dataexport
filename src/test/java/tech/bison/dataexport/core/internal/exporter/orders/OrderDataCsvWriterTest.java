@@ -37,9 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OrderDataCsvWriterTest {
@@ -72,9 +70,9 @@ class OrderDataCsvWriterTest {
         var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
-            .orderNumber("12345")
-            .lineItems(List.of(LineItem.builder().id("line-item-id").quantity(2L).buildUnchecked()))
-            .buildUnchecked();
+                .orderNumber("12345")
+                .lineItems(List.of(LineItem.builder().id("line-item-id").quantity(2L).buildUnchecked()))
+                .buildUnchecked();
 
         doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
 
@@ -103,18 +101,18 @@ class OrderDataCsvWriterTest {
     void writeRow_withVariantAttributeField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
         var properties = new DataExportProperties(ExportableResourceType.ORDER,
-            List.of("orderNumber", "lineItems.variant.attributes.color"));
+                List.of("orderNumber", "lineItems.variant.attributes.color"));
         var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
-            .orderNumber("12345")
-            .lineItems(List.of(LineItem.builder()
-                .id("line-item-id")
-                .variant(ProductVariant.builder()
-                    .attributes(List.of(Attribute.builder().name("color").value("blue").buildUnchecked()))
-                    .buildUnchecked())
-                .buildUnchecked()))
-            .buildUnchecked();
+                .orderNumber("12345")
+                .lineItems(List.of(LineItem.builder()
+                        .id("line-item-id")
+                        .variant(ProductVariant.builder()
+                                .attributes(List.of(Attribute.builder().name("color").value("blue").buildUnchecked()))
+                                .buildUnchecked())
+                        .buildUnchecked()))
+                .buildUnchecked();
 
         doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
 
@@ -128,27 +126,27 @@ class OrderDataCsvWriterTest {
     void writeRow_withExpandedVariantReferenceAttributeField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
         var properties = new DataExportProperties(ExportableResourceType.ORDER,
-            List.of("orderNumber", "lineItems.variant.attributes.supplierCategory.obj.name"));
+                List.of("orderNumber", "lineItems.variant.attributes.supplierCategory.obj.name"));
         var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var supplierCategoryValue = Map.of(
-            "typeId", "category",
-            "id", "category-id",
-            "obj", Map.of("name", "Tools")
+                "typeId", "category",
+                "id", "category-id",
+                "obj", Map.of("name", "Tools")
         );
 
         var order = Order.builder()
-            .orderNumber("12345")
-            .lineItems(List.of(LineItem.builder()
-                .id("line-item-id")
-                .variant(ProductVariant.builder()
-                    .attributes(List.of(Attribute.builder()
-                        .name("supplierCategory")
-                        .value(supplierCategoryValue)
+                .orderNumber("12345")
+                .lineItems(List.of(LineItem.builder()
+                        .id("line-item-id")
+                        .variant(ProductVariant.builder()
+                                .attributes(List.of(Attribute.builder()
+                                        .name("supplierCategory")
+                                        .value(supplierCategoryValue)
+                                        .buildUnchecked()))
+                                .buildUnchecked())
                         .buildUnchecked()))
-                    .buildUnchecked())
-                .buildUnchecked()))
-            .buildUnchecked();
+                .buildUnchecked();
 
         doNothing().when(csvPrinter).printRecord(rowCaptor.capture());
 
