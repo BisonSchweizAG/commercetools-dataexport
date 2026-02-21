@@ -10,7 +10,11 @@
       "createdAt": "2026-01-05T19:54:49.797Z",
       "lastModifiedAt": "2026-01-05T20:00:00.000Z",
       "email": "john.doe@example.com",
-      "customerNumber": "1001"
+      "customerNumber": "1001",
+      "addresses": [],
+      "billingAddressIds": [],
+      "shippingAddressIds": [],
+      "shippingAddresses": []
     }
   ]
 }

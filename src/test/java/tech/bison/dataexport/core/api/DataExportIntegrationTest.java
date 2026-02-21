@@ -73,6 +73,38 @@ class DataExportIntegrationTest {
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*]")));
     }
 
+    @Test
+    void execute_customersExport_uploadExpectedCsvPayload() throws IOException {
+        stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/customers"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json")
+                        .withBodyFile("customers-single-page.json")));
+
+        CloudStorageUploader cloudStorageUploader = Mockito.mock(CloudStorageUploader.class);
+        var dataExport = DataExport.configure()
+                .withApiProperties(
+                        new CommercetoolsProperties("test", "test", "http://localhost:8087", "http://localhost:8087/auth",
+                                "integrationtest"))
+                .withExportFields(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"))
+                .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
+                .withCloudStorageUploader(cloudStorageUploader)
+                .load();
+
+        var result = dataExport.execute();
+
+        assertThat(result.getResourceSummary(ExportableResourceType.CUSTOMER)).isEqualTo(ResourceExportResult.SUCCESS);
+
+        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(cloudStorageUploader)
+                .upload(Mockito.eq("customers/customers_2026_01_01_10_00_00.csv"), uploadedPayloadCaptor.capture());
+
+        String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
+        String expectedPayload = readResource("expected-payloads/data-export-customers.csv");
+        assertThat(actualPayload).isEqualTo(expectedPayload);
+
+        WireMock.verify(getRequestedFor(urlPathEqualTo("/integrationtest/customers")));
+    }
+
     private String readResource(String resourcePath) throws IOException {
         try (var stream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
             assertThat(stream).isNotNull();

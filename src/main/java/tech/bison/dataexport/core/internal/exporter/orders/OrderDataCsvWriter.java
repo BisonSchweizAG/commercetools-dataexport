@@ -16,7 +16,6 @@
 package tech.bison.dataexport.core.internal.exporter.orders;
 
 import com.commercetools.api.models.common.BaseResource;
-import com.commercetools.api.models.common.CentPrecisionMoney;
 import com.commercetools.api.models.order.Order;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,12 +23,10 @@ import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
+import tech.bison.dataexport.core.internal.exporter.common.CsvWriterSupport;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class OrderDataCsvWriter implements DataWriter {
@@ -52,42 +49,33 @@ public class OrderDataCsvWriter implements DataWriter {
         Order order = (Order) source;
         JsonNode node = objectMapper.valueToTree(source);
 
-        var orderFields = dataExportProperties.fields().stream().filter(field -> !field.startsWith(LINE_ITEM_PREFIX))
-                .toList();
-        var lineItemFields = dataExportProperties.fields().stream().filter(field -> field.startsWith(LINE_ITEM_PREFIX))
-                .toList();
+        var orderFields = CsvWriterSupport.topLevelFields(dataExportProperties.fields(), LINE_ITEM_PREFIX);
+        var lineItemFields = CsvWriterSupport.childItemFields(dataExportProperties.fields(), LINE_ITEM_PREFIX);
         if (!lineItemFields.isEmpty()) {
             writeRecordsWithLineItems(order, node, orderFields, lineItemFields);
         } else {
-            List<String> values = new ArrayList<>();
-            for (String field : dataExportProperties.fields()) {
-                values.add(extractValue(node, field));
-            }
+            List<String> values = dataExportProperties.fields().stream().map(field -> CsvWriterSupport.extractValue(node, field))
+                    .toList();
             writeRecord(order, values);
         }
     }
 
     private void writeRecordsWithLineItems(Order order, JsonNode orderNode, List<String> orderFields,
                                            List<String> lineItemFields) {
-        var orderRecord = Stream.concat(
-                orderFields.stream().map(f -> extractValue(orderNode, f)),
-                Collections.nCopies(lineItemFields.size(), "").stream()
-        ).toList();
+        var orderRecord = CsvWriterSupport.createParentRecord(orderNode, orderFields, lineItemFields.size());
         writeRecord(order, orderRecord);
 
         for (var lineItem : order.getLineItems()) {
             JsonNode lineItemNode = objectMapper.valueToTree(lineItem);
-            var lineItemRecord = Stream.concat(
-                    Collections.nCopies(orderFields.size(), "").stream(),
-                    lineItemFields.stream().map(f -> extractLineItemValue(lineItemNode, f.replace(LINE_ITEM_PREFIX, "")))
-            ).toList();
+            var lineItemRecord = CsvWriterSupport.createChildRecord(orderFields.size(), lineItemFields,
+                    field -> extractLineItemValue(lineItemNode, field.replace(LINE_ITEM_PREFIX, "")));
             writeRecord(order, lineItemRecord);
         }
     }
 
     private String extractLineItemValue(JsonNode lineItemNode, String field) {
         if (!field.startsWith(VARIANT_ATTRIBUTES_PREFIX)) {
-            return extractValue(lineItemNode, field);
+            return CsvWriterSupport.extractValue(lineItemNode, field);
         }
 
         String attributePath = field.substring(VARIANT_ATTRIBUTES_PREFIX.length());
@@ -108,9 +96,9 @@ public class OrderDataCsvWriter implements DataWriter {
                 .map(attribute -> {
                     JsonNode attributeValue = attribute.path("value");
                     if (targetNestedPath == null) {
-                        return extractNodeValue(attributeValue);
+                        return CsvWriterSupport.extractNodeValue(attributeValue);
                     }
-                    return extractValue(attributeValue, targetNestedPath);
+                    return CsvWriterSupport.extractValue(attributeValue, targetNestedPath);
                 })
                 .orElse("");
     }
@@ -129,21 +117,6 @@ public class OrderDataCsvWriter implements DataWriter {
             csvPrinter.flush();
         } catch (IOException e) {
             throw new DataExportException("Could not flush order csv writer.", e);
-        }
-    }
-
-    private String extractValue(JsonNode node, String field) {
-        String pointer = "/" + field.replace(".", "/");
-        JsonNode value = node.at(pointer);
-        return extractNodeValue(value);
-    }
-
-    private String extractNodeValue(JsonNode value) {
-        if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
-            double amount = value.get("centAmount").asInt() / 100d;
-            return String.valueOf(amount);
-        } else {
-            return value.asText("");
         }
     }
 }
