@@ -43,9 +43,7 @@ class DataExportExecutorTest {
     @Mock
     private CloudStorageUploader cloudStorageUploader;
     @Mock
-    private DataWriter customerDataWriter;
-    @Mock
-    private DataWriter orderDataWriter;
+    private DataWriter dataWriter;
 
     @Test
     void execute_allDataExportCommands() {
@@ -78,15 +76,6 @@ class DataExportExecutorTest {
                 return exporterFailure;
             }
         };
-
-        DataWriterProvider dataWriterProvider = (properties, csvPrinter) -> {
-            if (properties.resourceType() == ORDER) {
-                return customerDataWriter;
-            } else {
-                return orderDataWriter;
-            }
-        };
-
-        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, dataWriterProvider);
+        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, (properties, csvPrinter) -> dataWriter);
     }
 }
