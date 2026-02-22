@@ -76,6 +76,6 @@ class DataExportExecutorTest {
                 return exporterFailure;
             }
         };
-        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, (properties, csvPrinter) -> dataWriter);
+        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, (_, _) -> dataWriter);
     }
 }
