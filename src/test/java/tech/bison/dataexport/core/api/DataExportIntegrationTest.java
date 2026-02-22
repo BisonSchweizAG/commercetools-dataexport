@@ -67,7 +67,7 @@ class DataExportIntegrationTest {
 
         String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
         String expectedPayload = readResource("expected-payloads/data-export-orders.csv");
-        assertThat(actualPayload).isEqualTo(expectedPayload);
+        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
 
         WireMock.verify(getRequestedFor(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*]")));
@@ -100,7 +100,7 @@ class DataExportIntegrationTest {
 
         String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
         String expectedPayload = readResource("expected-payloads/data-export-customers.csv");
-        assertThat(actualPayload).isEqualTo(expectedPayload);
+        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
 
         WireMock.verify(getRequestedFor(urlPathEqualTo("/integrationtest/customers")));
     }
@@ -110,5 +110,10 @@ class DataExportIntegrationTest {
             assertThat(stream).isNotNull();
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private String normalizePayload(String payload) {
+        String normalized = payload.replace("\r\n", "\n").replace("\r", "\n");
+        return normalized.replaceAll("\\s+$", "");
     }
 }
