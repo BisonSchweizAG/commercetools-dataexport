@@ -23,26 +23,31 @@ import tech.bison.dataexport.core.api.executor.DataWriter;
 
 public class OrderDataExporter implements DataExporter {
 
-  static final Long QUERY_RESULT_LIMIT = 50L;
+    static final Long QUERY_RESULT_LIMIT = 50L;
+    static final String SUPPLIER_CATEGORY_EXPAND_PATH = "lineItems[*].variant.attributes[*]";
 
-  @Override
-  public void export(Context context, DataWriter dataWriter) {
-    var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
-        .withSort("createdAt desc").executeBlocking().getBody();
-    ordersResponse.getResults().forEach(dataWriter::writeRow);
-    for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
-      ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
-      ordersResponse.getResults().forEach(dataWriter::writeRow);
+    @Override
+    public void export(Context context, DataWriter dataWriter) {
+        var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
+                .withExpand(SUPPLIER_CATEGORY_EXPAND_PATH)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
+        ordersResponse.getResults().forEach(dataWriter::writeRow);
+        for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
+            ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
+            ordersResponse.getResults().forEach(dataWriter::writeRow);
+        }
     }
-  }
 
 
-  private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
-    return projectApiRoot.orders().get()
-        .withLimit(QUERY_RESULT_LIMIT)
-        .withOffset(offset)
-        .withSort("createdAt desc")
-        .executeBlocking()
-        .getBody();
-  }
+    private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
+        return projectApiRoot.orders().get()
+                .withLimit(QUERY_RESULT_LIMIT)
+                .withOffset(offset)
+                .withExpand(SUPPLIER_CATEGORY_EXPAND_PATH)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
+    }
 }

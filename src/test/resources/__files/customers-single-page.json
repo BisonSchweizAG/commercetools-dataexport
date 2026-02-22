@@ -1,0 +1,20 @@
+{
+  "limit": 50,
+  "offset": 0,
+  "count": 1,
+  "total": 1,
+  "results": [
+    {
+      "id": "f8ef5f9f-1760-4f1a-85e4-fc90e750efe2",
+      "version": 1,
+      "createdAt": "2026-01-05T19:54:49.797Z",
+      "lastModifiedAt": "2026-01-05T20:00:00.000Z",
+      "email": "john.doe@example.com",
+      "customerNumber": "1001",
+      "addresses": [],
+      "billingAddressIds": [],
+      "shippingAddressIds": [],
+      "shippingAddresses": []
+    }
+  ]
+}

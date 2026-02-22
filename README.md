@@ -51,6 +51,16 @@ lines all parent field values will be empty. <br>Child item fields can be config
 
 - order: lineItems. Example: lineItems.id
 
+Special case for order line item variant attributes:
+
+- Attribute value by name: `lineItems.variant.attributes.<attributeName>`
+- Nested value (for example expanded references): `lineItems.variant.attributes.<attributeName>.<nestedPath>`
+
+Examples:
+
+- `lineItems.variant.attributes.color`
+- `lineItems.variant.attributes.supplierCategory.obj.name`
+
 ## Building
 
 There is a possibility to use alternative url to maven central:
