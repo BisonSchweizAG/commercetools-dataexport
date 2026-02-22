@@ -36,8 +36,9 @@ public final class CsvWriterSupport {
 
     public static String extractNodeValue(JsonNode value) {
         if (value.get("type") != null && CentPrecisionMoney.CENT_PRECISION.equals(value.get("type").asText())) {
-            double amount = value.get("centAmount").asInt() / 100d;
-            return String.valueOf(amount);
+            int fractionDigits = value.get("fractionDigits") != null ? value.get("fractionDigits").asInt(2) : 2;
+            long centAmount = value.get("centAmount") != null ? value.get("centAmount").asLong() : 0L;
+            return java.math.BigDecimal.valueOf(centAmount).movePointLeft(fractionDigits).toPlainString();
         } else {
             return value.asText("");
         }
