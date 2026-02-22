@@ -13,6 +13,7 @@
 package tech.bison.dataexport.core.internal.exporter.orders;
 
 import com.commercetools.api.models.order.Order;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,13 +29,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
 
-@WireMockTest(httpPort = 8087)
+@WireMockTest
 class OrderDataExporterIntegrationTest {
     private Context context;
 
     @BeforeEach
-    void setUp() {
-        var configuration = new FluentConfiguration().withApiProperties(new CommercetoolsProperties("test", "test", "http://localhost:8087", "http://localhost:8087/auth", "integrationtest"));
+    void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
+        var configuration = new FluentConfiguration().withApiProperties(
+                new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth", "integrationtest"));
         stubFor(post(urlEqualTo("/auth"))
                 .willReturn(aResponse().withBodyFile("token.json")));
         context = new Context(configuration);

@@ -13,6 +13,7 @@
 package tech.bison.dataexport.core.api;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,11 +33,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
-@WireMockTest(httpPort = 8087)
+@WireMockTest
 class DataExportIntegrationTest {
 
     @Test
-    void execute_ordersExport_uploadExpectedCsvPayload() throws IOException {
+    void execute_ordersExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*]"))
@@ -45,9 +46,10 @@ class DataExportIntegrationTest {
                                 .withBodyFile("orders-execute-single-page.json")));
 
         CloudStorageUploader cloudStorageUploader = Mockito.mock(CloudStorageUploader.class);
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
         var dataExport = DataExport.configure()
                 .withApiProperties(
-                        new CommercetoolsProperties("test", "test", "http://localhost:8087", "http://localhost:8087/auth",
+                        new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
                                 "integrationtest"))
                 .withExportFields(ExportableResourceType.ORDER, List.of(
                         "orderNumber",
@@ -74,16 +76,17 @@ class DataExportIntegrationTest {
     }
 
     @Test
-    void execute_customersExport_uploadExpectedCsvPayload() throws IOException {
+    void execute_customersExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
         stubFor(get(urlPathEqualTo("/integrationtest/customers"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json")
                         .withBodyFile("customers-single-page.json")));
 
         CloudStorageUploader cloudStorageUploader = Mockito.mock(CloudStorageUploader.class);
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
         var dataExport = DataExport.configure()
                 .withApiProperties(
-                        new CommercetoolsProperties("test", "test", "http://localhost:8087", "http://localhost:8087/auth",
+                        new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
                                 "integrationtest"))
                 .withExportFields(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"))
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
