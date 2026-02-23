@@ -17,6 +17,7 @@ package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
+import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 
 import java.time.Clock;
 import java.util.Map;
@@ -28,6 +29,8 @@ public interface Configuration {
     CommercetoolsProperties getApiProperties();
 
     GcpCloudStorageProperties getGcpCloudStorageProperties();
+
+    CloudStorageUploader getCloudStorageUploader();
 
     Map<ExportableResourceType, DataExportProperties> getResourceExportProperties();
 

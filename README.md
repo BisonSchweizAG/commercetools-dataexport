@@ -28,17 +28,17 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 
 ```java
 DataExport dataExport = DataExport.configure()
-    .withApiRoot(projectApiRoot)
-    .withExportFields(ExportableResourceType.ORDER,
-        List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
-    .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
-    .load();
+        .withApiRoot(projectApiRoot)
+        .withExportFields(ExportableResourceType.ORDER,
+                List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+        .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
+        .load();
 ```
 
 Fields can be configured with the dot notation according to the commercetools api documentation.
 
 The money type centPrecision can be configured with a short hand notation by just referring to the parent field name.
-The exported value will be the centAmount divided by 100.
+The exported value will be the centAmount divided by fraction digits.
 Example:
 
 ```
@@ -49,7 +49,20 @@ DataExport.configure()
 Some resource types support child items. Child items are added to the csv file below the parent item. For child item
 lines all parent field values will be empty. <br>Child item fields can be configured with the dot notation:
 
-- order: lineItems. Example: lineItems.id
+| Resource Type | Child Items | Example      |
+|---------------|-------------|--------------|
+| order         | lineItems   | lineItems.id |
+| customer      | addresses   | addresses.id |
+
+Special case for order line item variant attributes:
+
+- Attribute value by name: `lineItems.variant.attributes.<attributeName>`
+- Nested value (for example expanded references): `lineItems.variant.attributes.<attributeName>.<nestedPath>`
+
+Examples:
+
+- `lineItems.variant.attributes.color`
+- `lineItems.variant.attributes.supplierCategory.obj.name`
 
 ## Building
 

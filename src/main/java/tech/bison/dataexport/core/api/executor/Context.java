@@ -18,52 +18,53 @@ package tech.bison.dataexport.core.api.executor;
 import com.commercetools.api.client.ProjectApiRoot;
 import com.commercetools.api.defaultconfig.ApiRootBuilder;
 import io.vrap.rmf.base.client.oauth2.ClientCredentials;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Map;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
 import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Map;
+
 public class Context {
 
-  private final Configuration configuration;
-  private final Clock defaultClock;
+    private final Configuration configuration;
+    private final Clock defaultClock;
 
-  public Context(Configuration configuration) {
-    this.configuration = configuration;
-    defaultClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
-  }
-
-  /**
-   * @return The commercetools api root object.
-   */
-  public ProjectApiRoot getProjectApiRoot() {
-    if (configuration.getApiRoot() != null) {
-      return configuration.getApiRoot();
+    public Context(Configuration configuration) {
+        this.configuration = configuration;
+        defaultClock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
     }
-    return createProjectApiRoot(configuration.getApiProperties());
-  }
 
-  public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
-    return configuration.getResourceExportProperties();
-  }
-
-  public Clock getClock() {
-    if (configuration.getClock() != null) {
-      return configuration.getClock();
+    /**
+     * @return The commercetools api root object.
+     */
+    public ProjectApiRoot getProjectApiRoot() {
+        if (configuration.getApiRoot() != null) {
+            return configuration.getApiRoot();
+        }
+        return createProjectApiRoot(configuration.getApiProperties());
     }
-    return defaultClock;
-  }
 
-  private ProjectApiRoot createProjectApiRoot(CommercetoolsProperties properties) {
-    return ApiRootBuilder.of().defaultClient(
-            ClientCredentials.of().withClientId(properties.clientId())
-                .withClientSecret(properties.clientSecret())
-                .build(),
-            properties.authUrl(), properties.apiUrl())
-        .build(properties.projectKey());
-  }
+    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
+        return configuration.getResourceExportProperties();
+    }
+
+    public Clock getClock() {
+        if (configuration.getClock() != null) {
+            return configuration.getClock();
+        }
+        return defaultClock;
+    }
+
+    private ProjectApiRoot createProjectApiRoot(CommercetoolsProperties properties) {
+        return ApiRootBuilder.of().defaultClient(
+                        ClientCredentials.of().withClientId(properties.clientId())
+                                .withClientSecret(properties.clientSecret())
+                                .build(),
+                        properties.authUrl(), properties.apiUrl())
+                .build(properties.projectKey());
+    }
 
 }

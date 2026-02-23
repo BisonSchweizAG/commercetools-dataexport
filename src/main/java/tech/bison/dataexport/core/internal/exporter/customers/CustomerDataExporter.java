@@ -15,15 +15,35 @@
  */
 package tech.bison.dataexport.core.internal.exporter.customers;
 
+import com.commercetools.api.client.ProjectApiRoot;
+import com.commercetools.api.models.customer.CustomerPagedQueryResponse;
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
 public class CustomerDataExporter implements DataExporter {
 
+    static final Long QUERY_RESULT_LIMIT = 50L;
 
     @Override
     public void export(Context context, DataWriter dataWriter) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        var customersResponse = context.getProjectApiRoot().customers().get().withLimit(QUERY_RESULT_LIMIT)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
+        customersResponse.getResults().forEach(dataWriter::writeRow);
+        for (int i = 1; i < customersResponse.getTotalPages(); i++) {
+            customersResponse = loadCustomersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
+            customersResponse.getResults().forEach(dataWriter::writeRow);
+        }
+    }
+
+    private CustomerPagedQueryResponse loadCustomersPage(ProjectApiRoot projectApiRoot, Long offset) {
+        return projectApiRoot.customers().get()
+                .withLimit(QUERY_RESULT_LIMIT)
+                .withOffset(offset)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
     }
 }

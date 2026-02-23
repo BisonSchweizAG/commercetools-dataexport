@@ -20,9 +20,7 @@ import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExportResult;
-import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
 import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
-import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
 
 /**
  * Entry point for a data cleanup run.
@@ -33,14 +31,7 @@ public class DataExport {
 
     public DataExport(Configuration configuration) {
         this.configuration = configuration;
-        dataExportExecutor = new DataExportExecutor(createCloudStorageUploader(configuration));
-    }
-
-    private CloudStorageUploader createCloudStorageUploader(Configuration configuration) {
-        if (configuration.getGcpCloudStorageProperties() != null) {
-            return new GcpCloudStorageUploader(configuration.getGcpCloudStorageProperties());
-        }
-        throw new DataExportException("No cloud storage configuration found.");
+        dataExportExecutor = new DataExportExecutor(configuration.getCloudStorageUploader());
     }
 
     /**

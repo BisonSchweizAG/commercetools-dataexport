@@ -23,12 +23,12 @@ import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
  */
 public interface DataExporter {
 
-  void export(Context context, DataWriter dataWriter);
+    void export(Context context, DataWriter dataWriter);
 
-  static DataExporter from(ExportableResourceType resourceType) {
-    return switch (resourceType) {
-      case ORDER -> new OrderDataExporter();
-      case CUSTOMER -> new CustomerDataExporter();
-    };
-  }
+    static DataExporter from(ExportableResourceType resourceType) {
+        return switch (resourceType) {
+            case ORDER -> new OrderDataExporter();
+            case CUSTOMER -> new CustomerDataExporter();
+        };
+    }
 }

@@ -1,0 +1,16 @@
+{
+  "limit": 50,
+  "offset": 50,
+  "count": 1,
+  "total": 60,
+  "results": [
+    {
+      "id": "d76b9bca-8a13-46f7-a0a7-a4e7fb1d3272",
+      "version": 2,
+      "createdAt": "2026-01-04T19:54:49.797Z",
+      "lastModifiedAt": "2026-01-04T20:00:00.000Z",
+      "email": "jane.doe@example.com",
+      "customerNumber": "1002"
+    }
+  ]
+}

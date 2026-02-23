@@ -17,5 +17,5 @@ package tech.bison.dataexport.core.api.storage;
 
 public interface CloudStorageUploader {
 
-  void upload(String name, byte[] data);
+    void upload(String name, byte[] data);
 }

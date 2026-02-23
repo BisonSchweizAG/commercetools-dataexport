@@ -1,6 +1,19 @@
+/*
+ * Copyright (C) 2000 - 2026 Bison Schweiz AG
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package tech.bison.dataexport.core.internal.exporter.orders;
 
 import com.commercetools.api.models.order.Order;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,13 +29,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
 
-@WireMockTest(httpPort = 8087)
-class DataExporterIntegrationTest {
+@WireMockTest
+class OrderDataExporterIntegrationTest {
     private Context context;
 
     @BeforeEach
-    void setUp() {
-        var configuration = new FluentConfiguration().withApiProperties(new CommercetoolsProperties("test", "test", "http://localhost:8087", "http://localhost:8087/auth", "integrationtest"));
+    void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
+        var configuration = new FluentConfiguration().withApiProperties(
+                new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth", "integrationtest"));
         stubFor(post(urlEqualTo("/auth"))
                 .willReturn(aResponse().withBodyFile("token.json")));
         context = new Context(configuration);
@@ -33,6 +48,7 @@ class DataExporterIntegrationTest {
         var orderDataExporter = new OrderDataExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
 
         var orderDataWriter = mock(DataWriter.class);
@@ -47,10 +63,12 @@ class DataExporterIntegrationTest {
         var orderDataExporter = new OrderDataExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("offset", equalTo("50"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.SUPPLIER_CATEGORY_EXPAND_PATH))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
 
         var orderDataWriter = mock(DataWriter.class);
