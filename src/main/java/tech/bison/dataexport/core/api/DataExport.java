@@ -26,44 +26,46 @@ import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
  * Entry point for a data cleanup run.
  */
 public class DataExport {
-    private final Configuration configuration;
-    private final DataExportExecutor dataExportExecutor;
 
-    public DataExport(Configuration configuration) {
-        this.configuration = configuration;
-        dataExportExecutor = new DataExportExecutor(configuration.getCloudStorageUploader());
-    }
+  private final Configuration configuration;
+  private final DataExportExecutor dataExportExecutor;
 
-    /**
-     * This is your starting point. This creates a configuration which can be customized to your needs before being loaded into a new DataExport instance using the load() method.
-     * <p>
-     * In its simplest form, this is how you configure DataExport with all defaults to get started:
-     * <pre>DataExport dataCleanup = DataExport.configure().withApiUrl(..).load();</pre>
-     * <p>
-     * After that you have a fully-configured DataExport instance and you can call execute()
-     *
-     * @return A new configuration from which DataExport can be loaded.
-     */
-    public static FluentConfiguration configure() {
-        return new FluentConfiguration();
-    }
+  public DataExport(Configuration configuration) {
+    this.configuration = configuration;
+    dataExportExecutor = new DataExportExecutor(configuration.getExportDataUploaders());
+  }
 
-    public Configuration getConfiguration() {
-        return configuration;
-    }
+  /**
+   * This is your starting point. This creates a configuration which can be customized to your needs before being loaded
+   * into a new DataExport instance using the load() method.
+   * <p>
+   * In its simplest form, this is how you configure DataExport with all defaults to get started:
+   * <pre>DataExport dataCleanup = DataExport.configure().withApiUrl(..).load();</pre>
+   * <p>
+   * After that you have a fully-configured DataExport instance and you can call execute()
+   *
+   * @return A new configuration from which DataExport can be loaded.
+   */
+  public static FluentConfiguration configure() {
+    return new FluentConfiguration();
+  }
 
-    /**
-     * Executes the configured data exports.
-     *
-     * @return the export result
-     * @throws DataExportException in case of any exception thrown during execution.
-     */
-    public DataExportResult execute() {
-        try {
-            var context = new Context(configuration);
-            return dataExportExecutor.execute(context);
-        } catch (Exception ex) {
-            throw new DataExportException("Error while executing data export.", ex);
-        }
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  /**
+   * Executes the configured data exports.
+   *
+   * @return the export result
+   * @throws DataExportException in case of any exception thrown during execution.
+   */
+  public DataExportResult execute() {
+    try {
+      var context = new Context(configuration);
+      return dataExportExecutor.execute(context);
+    } catch (Exception ex) {
+      throw new DataExportException("Error while executing data export.", ex);
     }
+  }
 }

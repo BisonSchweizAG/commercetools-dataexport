@@ -37,7 +37,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
-import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
+import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 @WireMockTest
 class DataExportIntegrationTest {
@@ -51,7 +51,7 @@ class DataExportIntegrationTest {
             aResponse().withHeader("Content-Type", "application/json")
                 .withBodyFile("orders-execute-single-page.json")));
 
-    CloudStorageUploader cloudStorageUploader = Mockito.mock(CloudStorageUploader.class);
+    ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
     String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
     var dataExport = DataExport.configure()
         .withApiProperties(
@@ -63,7 +63,7 @@ class DataExportIntegrationTest {
             "lineItems.id", "lineItems.quantity", "lineItems.variant.attributes.color",
             "lineItems.variant.attributes.supplierCategory.obj.key"))
         .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
-        .withCloudStorageUploader(cloudStorageUploader)
+        .withUploader(cloudStorageUploader)
         .load();
 
     var result = dataExport.execute();
@@ -86,7 +86,7 @@ class DataExportIntegrationTest {
         .willReturn(aResponse().withHeader("Content-Type", "application/json")
             .withBodyFile("customers-single-page.json")));
 
-    CloudStorageUploader cloudStorageUploader = Mockito.mock(CloudStorageUploader.class);
+    ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
     String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
     var dataExport = DataExport.configure()
         .withApiProperties(
@@ -94,7 +94,7 @@ class DataExportIntegrationTest {
                 "integrationtest"))
         .withExportFields(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"))
         .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
-        .withCloudStorageUploader(cloudStorageUploader)
+        .withUploader(cloudStorageUploader)
         .load();
 
     var result = dataExport.execute();
