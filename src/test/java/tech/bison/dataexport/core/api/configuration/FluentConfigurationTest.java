@@ -12,125 +12,117 @@
  */
 package tech.bison.dataexport.core.api.configuration;
 
-import com.commercetools.api.client.ProjectApiRoot;
-import org.junit.jupiter.api.Test;
-import tech.bison.dataexport.core.api.exception.DataExportException;
-import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
-import tech.bison.dataexport.core.internal.storage.gcp.GcpCloudStorageUploader;
-
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
 import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
+import com.commercetools.api.client.ProjectApiRoot;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tech.bison.dataexport.core.api.exception.DataExportException;
+import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+
+@ExtendWith(MockitoExtension.class)
 class FluentConfigurationTest {
 
-    @Test
-    void load_withMissingApiConfiguration_throwsException() {
-        var configuration = new FluentConfiguration()
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-                .withExportFields(ORDER, List.of("id"));
+  @Mock
+  private ExportDataUploader exportDataUploader;
 
-        assertThatThrownBy(configuration::load)
-                .isInstanceOf(DataExportException.class)
-                .hasMessage("Missing commercetools api configuration. Either use withApiProperties() or withApiRoot().");
-    }
+  @Test
+  void load_withMissingApiConfiguration_throwsException() {
+    var configuration = new FluentConfiguration()
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id"));
 
-    @Test
-    void load_withEmptyExportFieldsMap_throwsException() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration());
+    assertThatThrownBy(configuration::load)
+        .isInstanceOf(DataExportException.class)
+        .hasMessage("Missing commercetools api configuration. Either use withApiProperties() or withApiRoot().");
+  }
 
-        assertThatThrownBy(configuration::load)
-                .isInstanceOf(DataExportException.class)
-                .hasMessage("At least one export type must be configured.");
-    }
+  @Test
+  void load_withEmptyExportFieldsMap_throwsException() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader);
 
-    @Test
-    void load_withExportTypeWithoutFields_throwsException() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-                .withExportFields(ORDER, List.of());
+    assertThatThrownBy(configuration::load)
+        .isInstanceOf(DataExportException.class)
+        .hasMessage("At least one export type must be configured.");
+  }
 
-        assertThatThrownBy(configuration::load)
-                .isInstanceOf(DataExportException.class)
-                .hasMessage("At least one export type has no fields configured.");
-    }
+  @Test
+  void load_withExportTypeWithoutFields_throwsException() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of());
 
-    @Test
-    void load_withMissingGcpCloudStorageProperties_throwsException() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withExportFields(ORDER, List.of("id"));
+    assertThatThrownBy(configuration::load)
+        .isInstanceOf(DataExportException.class)
+        .hasMessage("At least one export type has no fields configured.");
+  }
 
-        assertThatThrownBy(configuration::load)
-                .isInstanceOf(DataExportException.class)
-                .hasMessage("Cloud storage configuration is missing.");
-    }
+  @Test
+  void load_withMissingDataExportUploader_throwsException() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withExportFields(ORDER, List.of("id"));
 
-    @Test
-    void load_withCustomCloudStorageUploader_returnsDataExport() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withExportFields(ORDER, List.of("id"))
-                .withCloudStorageUploader(mock(CloudStorageUploader.class));
+    assertThatThrownBy(configuration::load)
+        .isInstanceOf(DataExportException.class)
+        .hasMessage("No data export uploader configured.");
+  }
 
-        assertThat(configuration.load()).isNotNull();
-    }
+  @Test
+  void load_withApiProperties_returnsDataExport() {
+    var configuration = new FluentConfiguration()
+        .withApiProperties(createValidCommercetoolsProperties())
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id"));
 
-    @Test
-    void load_withGcpCloudStorageProperties_defaultsCloudStorageUploaderToGcp() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withExportFields(ORDER, List.of("id"))
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration());
+    assertThat(configuration.load()).isNotNull();
+  }
 
-        var dataExport = configuration.load();
+  @Test
+  void load_withAllRequiredConfigurations_returnsDataExport() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id"));
 
-        assertThat(dataExport.getConfiguration().getCloudStorageUploader()).isInstanceOf(GcpCloudStorageUploader.class);
-    }
+    assertThat(configuration.getExportDataUploaders()).containsExactly(exportDataUploader);
+    assertThat(configuration.load()).isNotNull();
+  }
 
-    @Test
-    void load_withApiProperties_returnsDataExport() {
-        var configuration = new FluentConfiguration()
-                .withApiProperties(createValidCommercetoolsProperties())
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-                .withExportFields(ORDER, List.of("id"));
+  @Test
+  void load_withMultipleExportTypes_returnsDataExport() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id", "orderNumber"))
+        .withExportFields(CUSTOMER, List.of("id", "name"));
 
-        assertThat(configuration.load()).isNotNull();
-    }
+    assertThat(configuration.load()).isNotNull();
+  }
 
-    @Test
-    void load_withAllRequiredConfigurations_returnsDataExport() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-                .withExportFields(ORDER, List.of("id"));
+  @Test
+  void withGcpCloudStorageProperties_addsGcpUploader() {
+    var gcpProperties = new GcpCloudStorageProperties("projectId", "bucketName", "credentialPath");
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withGcpCloudStorageProperties(gcpProperties)
+        .withExportFields(ORDER, List.of("id"));
 
-        assertThat(configuration.load()).isNotNull();
-    }
+    assertThat(configuration.getExportDataUploaders()).hasSize(1);
+    assertThat(configuration.load()).isNotNull();
+  }
 
-    @Test
-    void load_withMultipleExportTypes_returnsDataExport() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(createValidCloudStorageConfiguration())
-                .withExportFields(ORDER, List.of("id", "orderNumber"))
-                .withExportFields(CUSTOMER, List.of("id", "name"));
-
-        assertThat(configuration.load()).isNotNull();
-    }
-
-    private GcpCloudStorageProperties createValidCloudStorageConfiguration() {
-        return new GcpCloudStorageProperties("projectId", "bucketName", null);
-    }
-
-    private CommercetoolsProperties createValidCommercetoolsProperties() {
-        return new CommercetoolsProperties("clientId", "clientSecret", "authUrl", "apiUrl", "projectKey");
-    }
+  private CommercetoolsProperties createValidCommercetoolsProperties() {
+    return new CommercetoolsProperties("clientId", "clientSecret", "authUrl", "apiUrl", "projectKey");
+  }
 }

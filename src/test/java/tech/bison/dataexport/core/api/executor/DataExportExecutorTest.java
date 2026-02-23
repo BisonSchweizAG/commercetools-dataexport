@@ -13,69 +13,71 @@
 
 package tech.bison.dataexport.core.api.executor;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-import tech.bison.dataexport.core.api.storage.CloudStorageUploader;
-import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
+import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
+import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
+import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
-import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
 
 @ExtendWith(MockitoExtension.class)
 class DataExportExecutorTest {
 
-    @Mock
-    private CloudStorageUploader cloudStorageUploader;
-    @Mock
-    private DataWriter dataWriter;
+  @Mock
+  private ExportDataUploader exportDataUploader;
+  @Mock
+  private DataWriter dataWriter;
 
-    @Test
-    void execute_allDataExportCommands() {
-        var context = mock(Context.class);
-        var orderProperties = new DataExportProperties(ORDER, List.of());
-        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
-        when(context.getResourceExportProperties()).thenReturn(
-                Map.of(ORDER, orderProperties, CUSTOMER, customerProperties));
-        when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
-        var exporterSuccess = mock(DataExporter.class);
+  @Test
+  void execute_allDataExportCommands() {
+    var context = mock(Context.class);
+    var orderProperties = new DataExportProperties(ORDER, List.of());
+    var customerProperties = new DataExportProperties(CUSTOMER, List.of());
+    when(context.getResourceExportProperties()).thenReturn(
+        Map.of(ORDER, orderProperties, CUSTOMER, customerProperties));
+    when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
+    var exporterSuccess = mock(DataExporter.class);
 
-        var exporterFailure = mock(DataExporter.class);
-        doThrow(RuntimeException.class).when(exporterFailure).export(any(), any());
+    var exporterFailure = mock(DataExporter.class);
+    doThrow(RuntimeException.class).when(exporterFailure).export(any(), any());
 
-        var executor = createDataExportExecutor(exporterSuccess, exporterFailure);
-        DataExportResult result = executor.execute(context);
+    var executor = createDataExportExecutor(exporterSuccess, exporterFailure);
+    DataExportResult result = executor.execute(context);
 
-        assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
-        verify(cloudStorageUploader, Mockito.times(1)).upload(eq("orders/orders_2026_01_01_10_00_00.csv"),
-                any(byte[].class));
-        assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
+    assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
+    verify(exportDataUploader, Mockito.times(1)).upload(eq("orders/orders_2026_01_01_10_00_00.csv"),
+        any(byte[].class));
+    assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
 
-    }
+  }
 
-    private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
-        DataExporterProvider dataExporterProvider = resourceType -> {
-            if (resourceType == ORDER) {
-                return exporterSuccess;
-            } else {
-                return exporterFailure;
-            }
-        };
-        return new DataExportExecutor(cloudStorageUploader, dataExporterProvider, (_, _) -> dataWriter);
-    }
+  private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
+    DataExporterProvider dataExporterProvider = resourceType -> {
+      if (resourceType == ORDER) {
+        return exporterSuccess;
+      } else {
+        return exporterFailure;
+      }
+    };
+    return new DataExportExecutor(List.of(exportDataUploader), dataExporterProvider, (_, _) -> dataWriter);
+  }
 }

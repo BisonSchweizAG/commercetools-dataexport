@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.api.storage;
+package tech.bison.dataexport.core.api.upload;
 
-public interface CloudStorageUploader {
+public interface ExportDataUploader {
 
-    void upload(String name, byte[] data);
+  void upload(String name, byte[] data);
 }

@@ -1,13 +1,15 @@
 # commercetools Dataexport
 
-With commercetools Data Export you can export data from commercetools to csv files and upload them to a cloud storage.
+With commercetools Data Export you can export data from commercetools to csv files and upload them to an upload
+destination.
 The exported data is always a full export of the corresponding resource type.
 
 The following commercetools resource types are supported:
 
 - Orders
+- Customers
 
-The following cloud storage types are supported:
+The following upload destinations are supported:
 
 - Google Cloud Storage
 
@@ -28,11 +30,11 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 
 ```java
 DataExport dataExport = DataExport.configure()
-        .withApiRoot(projectApiRoot)
-        .withExportFields(ExportableResourceType.ORDER,
-                List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
-        .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
-        .load();
+    .withApiRoot(projectApiRoot)
+    .withExportFields(ExportableResourceType.ORDER,
+        List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+    .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
+    .load();
 ```
 
 Fields can be configured with the dot notation according to the commercetools api documentation.
