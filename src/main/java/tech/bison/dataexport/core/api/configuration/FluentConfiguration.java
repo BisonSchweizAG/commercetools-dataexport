@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import tech.bison.dataexport.core.api.DataExport;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
@@ -81,6 +82,7 @@ public class FluentConfiguration implements Configuration {
    * Configure an uploader for the exported data.
    */
   public FluentConfiguration withUploader(ExportDataUploader exportDataUploader) {
+    Objects.requireNonNull(exportDataUploader, "exportDataUploader must not be null.");
     uploaderList.add(exportDataUploader);
     return this;
   }
@@ -89,7 +91,8 @@ public class FluentConfiguration implements Configuration {
    * Configure GCP Cloud Storage uploader with the given properties.
    */
   public FluentConfiguration withGcpCloudStorageProperties(GcpCloudStorageProperties gcpCloudStorageProperties) {
-    uploaderList.add(new GcpFileUploader(gcpCloudStorageProperties));
+    Objects.requireNonNull(gcpCloudStorageProperties, "gcpCloudStorageProperties must not be null.");
+    withUploader(new GcpFileUploader(gcpCloudStorageProperties));
     return this;
   }
 
