@@ -51,6 +51,14 @@ public class Context {
         return configuration.getResourceExportProperties();
     }
 
+    public Integer getMaxRecordsPerUpload() {
+        return configuration.getMaxRecordsPerUpload();
+    }
+
+    public String getOutputFileExtension() {
+        return configuration.getOutputFileExtension();
+    }
+
     public Clock getClock() {
         if (configuration.getClock() != null) {
             return configuration.getClock();
