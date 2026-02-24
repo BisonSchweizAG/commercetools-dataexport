@@ -122,6 +122,31 @@ class FluentConfigurationTest {
     assertThat(configuration.load()).isNotNull();
   }
 
+  @Test
+  void load_withInvalidMaxRecordsPerUpload_throwsException() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id"))
+        .withMaxRecordsPerUpload(0);
+
+    assertThatThrownBy(configuration::load)
+        .isInstanceOf(DataExportException.class)
+        .hasMessage("maxRecordsPerUpload must be greater than 0.");
+  }
+
+  @Test
+  void withMaxRecordsPerUpload_setsValue() {
+    var configuration = new FluentConfiguration()
+        .withApiRoot(mock(ProjectApiRoot.class))
+        .withUploader(exportDataUploader)
+        .withExportFields(ORDER, List.of("id"))
+        .withMaxRecordsPerUpload(500);
+
+    assertThat(configuration.getMaxRecordsPerUpload()).isEqualTo(500);
+    assertThat(configuration.load()).isNotNull();
+  }
+
   private CommercetoolsProperties createValidCommercetoolsProperties() {
     return new CommercetoolsProperties("clientId", "clientSecret", "authUrl", "apiUrl", "projectKey");
   }

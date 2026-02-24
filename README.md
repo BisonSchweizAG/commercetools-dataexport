@@ -30,11 +30,11 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 
 ```java
 DataExport dataExport = DataExport.configure()
-    .withApiRoot(projectApiRoot)
-    .withExportFields(ExportableResourceType.ORDER,
-        List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
-    .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
-    .load();
+        .withApiRoot(projectApiRoot)
+        .withExportFields(ExportableResourceType.ORDER,
+                List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+        .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
+        .load();
 ```
 
 Fields can be configured with the dot notation according to the commercetools api documentation.
@@ -65,6 +65,16 @@ Examples:
 
 - `lineItems.variant.attributes.color`
 - `lineItems.variant.attributes.supplierCategory.obj.name`
+
+The uploaded files can be chunked by the number of records. If the max records per upload is reached a new file will be
+created.
+Example:
+
+```java
+DataExport dataExport = DataExport.configure()
+        .withMaxRecordsPerUpload(10000)
+        .load();
+```
 
 ## Building
 

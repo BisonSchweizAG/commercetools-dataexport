@@ -19,6 +19,7 @@ import com.commercetools.api.client.ProjectApiRoot;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
@@ -31,6 +32,12 @@ public interface Configuration {
   List<ExportDataUploader> getExportDataUploaders();
 
   Map<ExportableResourceType, DataExportProperties> getResourceExportProperties();
+
+  DataWriterProvider getDataWriterProvider();
+
+  String getOutputFileExtension();
+
+  Integer getMaxRecordsPerUpload();
 
   Clock getClock();
 }
