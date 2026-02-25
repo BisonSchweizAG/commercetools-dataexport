@@ -17,23 +17,22 @@ package tech.bison.dataexport.core.api.executor;
 
 import tech.bison.dataexport.core.api.ResourceExportResult;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public class DataExportResult {
 
-    private final Map<ExportableResourceType, ResourceExportResult> resourceExportSummaryMap = new EnumMap<>(
-            ExportableResourceType.class);
+    private final Map<String, ResourceExportResult> resourceExportSummaryMap = new HashMap<>();
 
     public static DataExportResult empty() {
         return new DataExportResult();
     }
 
-    public void addResult(ExportableResourceType resourceType, ResourceExportResult exportResult) {
-        resourceExportSummaryMap.put(resourceType, exportResult);
+    public void addResult(String exportKey, ResourceExportResult exportResult) {
+        resourceExportSummaryMap.put(exportKey, exportResult);
     }
 
-    public ResourceExportResult getResourceSummary(ExportableResourceType resourceType) {
-        return resourceExportSummaryMap.get(resourceType);
+    public ResourceExportResult getResourceSummary(String exportKey) {
+        return resourceExportSummaryMap.get(exportKey);
     }
 }

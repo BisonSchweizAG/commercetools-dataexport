@@ -19,7 +19,6 @@ import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.Context;
-import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataExportResult;
 import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
 
@@ -33,8 +32,8 @@ public class DataExport {
 
   public DataExport(Configuration configuration) {
     this.configuration = configuration;
-    dataExportExecutor = new DataExportExecutor(configuration.getExportDataUploaders(), DataExporter::from,
-        configuration.getDataWriterProvider());
+    dataExportExecutor = new DataExportExecutor(configuration.getExportDataUploaders(),
+        configuration.getDataExportExecutions());
   }
 
   /**

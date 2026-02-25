@@ -44,7 +44,8 @@ class CustomerDataCsvWriterTest {
     @Test
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"));
+        var properties = new DataExportProperties(ExportableResourceType.CUSTOMER,
+                List.of("id", "email", "customerNumber"));
         var csvDataWriter = new CustomerDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var customer = Customer.builder()

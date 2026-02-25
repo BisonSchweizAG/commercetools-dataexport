@@ -15,20 +15,10 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
-import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
-
 /**
  * Interface for exporting data.
  */
 public interface DataExporter {
 
     void export(Context context, DataWriter dataWriter);
-
-    static DataExporter from(ExportableResourceType resourceType) {
-        return switch (resourceType) {
-            case ORDER -> new OrderDataExporter();
-            case CUSTOMER -> new CustomerDataExporter();
-        };
-    }
 }

@@ -48,7 +48,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "customerId", "createdAt"));
+        var properties = new DataExportProperties(ExportableResourceType.ORDER,
+                List.of("orderNumber", "customerId", "createdAt"));
         var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
@@ -66,7 +67,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_withPositionFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "lineItems.id", "lineItems.quantity"));
+        var properties = new DataExportProperties(ExportableResourceType.ORDER,
+                List.of("orderNumber", "lineItems.id", "lineItems.quantity"));
         var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
 
         var order = Order.builder()

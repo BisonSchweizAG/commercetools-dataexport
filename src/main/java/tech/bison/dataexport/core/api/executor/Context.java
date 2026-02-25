@@ -47,7 +47,7 @@ public class Context {
         return createProjectApiRoot(configuration.getApiProperties());
     }
 
-    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
+    public Map<String, DataExportProperties> getResourceExportProperties() {
         return configuration.getResourceExportProperties();
     }
 

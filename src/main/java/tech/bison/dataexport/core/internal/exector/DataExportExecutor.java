@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
@@ -37,42 +38,45 @@ public class DataExportExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataExportExecutor.class);
     private final List<ExportDataUploader> exportDataUploaderList;
-    private final DataExporterProvider dataExporterProvider;
-    private final DataWriterProvider dataWriterProvider;
+    private final Map<String, DataExportExecution> dataExportExecutions;
 
-    public DataExportExecutor(List<ExportDataUploader> exportDataUploaderList, DataExporterProvider dataExporterProvider,
-                              DataWriterProvider dataWriterProvider) {
+    public DataExportExecutor(List<ExportDataUploader> exportDataUploaderList,
+                              Map<String, DataExportExecution> dataExportExecutions) {
         this.exportDataUploaderList = exportDataUploaderList;
-        this.dataExporterProvider = dataExporterProvider;
-        this.dataWriterProvider = dataWriterProvider;
+        this.dataExportExecutions = dataExportExecutions;
     }
 
     public DataExportResult execute(Context context) {
         DataExportResult dataExportResult = DataExportResult.empty();
         var resourceExportProperties = context.getResourceExportProperties();
-        for (var entry : resourceExportProperties.entrySet()) {
-            var resourceType = entry.getKey();
-            LOG.info("Running data export for resource '{}'.", resourceType.getName());
+        for (var entry : dataExportExecutions.entrySet()) {
+            var exportKey = entry.getKey();
+            LOG.info("Running data export for resource '{}'.", exportKey);
             try {
-                DataExporter dataExporter = dataExporterProvider.apply(entry.getKey());
-                DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(resourceType, entry.getValue(), context);
-                dataExporter.export(context, dataWriter);
+                DataExportExecution dataExportExecution = entry.getValue();
+                DataExportProperties dataExportProperties = resourceExportProperties.get(exportKey);
+                if (dataExportProperties == null) {
+                    throw new IllegalArgumentException("No export properties configured for export key: " + exportKey);
+                }
+                DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey, dataExportProperties, context,
+                        dataExportExecution.dataWriterProvider());
+                dataExportExecution.dataExporter().export(context, dataWriter);
                 dataWriter.flush();
-                dataExportResult.addResult(resourceType, SUCCESS);
-                LOG.info("Data export finished successfully for resource '{}'.", resourceType.getName());
+                dataExportResult.addResult(exportKey, SUCCESS);
+                LOG.info("Data export finished successfully for resource '{}'.", exportKey);
             } catch (Exception ex) {
-                dataExportResult.addResult(resourceType, FAILED);
+                dataExportResult.addResult(exportKey, FAILED);
                 LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.",
-                        resourceType.getName(), ex);
+                        exportKey, ex);
             }
         }
         return dataExportResult;
     }
 
-    private String getBlobName(ExportableResourceType resourceType, Clock clock, String fileExtension,
+    private String getBlobName(String exportKey, Clock clock, String fileExtension,
                                Integer chunkNumber) {
         String normalizedExtension = fileExtension.startsWith(".") ? fileExtension.substring(1) : fileExtension;
-        String baseName = String.format("%ss/%ss_%s", resourceType.getName(), resourceType.getName(),
+        String baseName = String.format("%ss/%ss_%s", exportKey, exportKey,
                 LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")));
         if (chunkNumber == null) {
             return String.format("%s.%s", baseName, normalizedExtension);
@@ -82,9 +86,10 @@ public class DataExportExecutor {
 
     private class ChunkedUploadDataWriterWrapper implements DataWriter {
 
-        private final ExportableResourceType resourceType;
+        private final String exportKey;
         private final Context context;
         private final DataExportProperties dataExportProperties;
+        private final DataWriterProvider dataWriterProvider;
         private final Integer maxRecordsPerUpload;
         private final String outputFileExtension;
         private final List<byte[]> completedChunks = new ArrayList<>();
@@ -93,11 +98,13 @@ public class DataExportExecutor {
         private int recordCountInChunk;
         private boolean flushed;
 
-        private ChunkedUploadDataWriterWrapper(ExportableResourceType resourceType,
-                                               DataExportProperties dataExportProperties, Context context) {
-            this.resourceType = resourceType;
+        private ChunkedUploadDataWriterWrapper(String exportKey,
+                                               DataExportProperties dataExportProperties, Context context,
+                                               DataWriterProvider dataWriterProvider) {
+            this.exportKey = exportKey;
             this.dataExportProperties = dataExportProperties;
             this.context = context;
+            this.dataWriterProvider = dataWriterProvider;
             this.maxRecordsPerUpload = context.getMaxRecordsPerUpload();
             this.outputFileExtension = context.getOutputFileExtension();
             rotateChunk();
@@ -142,7 +149,7 @@ public class DataExportExecutor {
             try {
                 outputStream.close();
             } catch (IOException ex) {
-                LOG.debug("Failed to close output stream for resource '{}'.", resourceType.getName(), ex);
+                LOG.debug("Failed to close output stream for resource '{}'.", exportKey, ex);
             }
         }
 
@@ -151,7 +158,7 @@ public class DataExportExecutor {
                 Integer currentChunk = maxRecordsPerUpload == null ? null : i + 1;
                 byte[] bytes = completedChunks.get(i);
                 exportDataUploaderList.forEach(uploader -> uploader.upload(
-                        getBlobName(resourceType, context.getClock(), outputFileExtension, currentChunk), bytes));
+                        getBlobName(exportKey, context.getClock(), outputFileExtension, currentChunk), bytes));
             }
         }
     }

@@ -16,14 +16,25 @@
 package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
+import io.vrap.rmf.base.client.utils.json.JsonUtils;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.DataExport;
+import tech.bison.dataexport.core.api.executor.DataExportExecution;
 import tech.bison.dataexport.core.api.exception.DataExportException;
-import tech.bison.dataexport.core.api.executor.DataWriter;
+import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
+import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.*;
 
@@ -33,12 +44,12 @@ public class FluentConfiguration implements Configuration {
     private CommercetoolsProperties apiProperties;
     private ProjectApiRoot projectApiRoot;
     private Clock clock;
-    private final DataWriterProvider dataWriterProvider = DataWriter::csv;
     private String outputFileExtension = "csv";
     private Integer maxRecordsPerUpload;
     private final List<ExportDataUploader> uploaderList = new ArrayList<>();
     private final Map<ExportableResourceType, DataExportProperties> exportFieldsMap = new EnumMap<>(
             ExportableResourceType.class);
+    private final Map<String, DataExportExecution> dataExportExecutionMap = new HashMap<>();
 
     /**
      * @return The new fully-configured DataExport instance.
@@ -105,8 +116,35 @@ public class FluentConfiguration implements Configuration {
      * Configures the fields to be exported for the given resource types.
      */
     public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
+        String exportKey = resourceType.getName();
         this.exportFieldsMap.put(resourceType, new DataExportProperties(resourceType, exportFields));
+        this.dataExportExecutionMap.put(exportKey, new DataExportExecution(createDataExporter(resourceType),
+                createDataWriterProvider(resourceType)));
         return this;
+    }
+
+    private DataExporter createDataExporter(ExportableResourceType resourceType) {
+        return switch (resourceType) {
+            case ORDER -> new OrderDataExporter();
+            case CUSTOMER -> new CustomerDataExporter();
+        };
+    }
+
+    private DataWriterProvider createDataWriterProvider(ExportableResourceType resourceType) {
+        return (dataExportProperties, outputStream) -> {
+            try {
+                var csvPrinter = new CSVPrinter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8),
+                        CSVFormat.DEFAULT.builder().setHeader(dataExportProperties.fields().toArray(new String[0]))
+                                .get());
+                var objectMapper = JsonUtils.createObjectMapper();
+                return switch (resourceType) {
+                    case ORDER -> new OrderDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+                    case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+                };
+            } catch (IOException ex) {
+                throw new DataExportException("Error creating CSVPrinter.", ex);
+            }
+        };
     }
 
 
@@ -143,11 +181,6 @@ public class FluentConfiguration implements Configuration {
     }
 
     @Override
-    public DataWriterProvider getDataWriterProvider() {
-        return dataWriterProvider;
-    }
-
-    @Override
     public String getOutputFileExtension() {
         return outputFileExtension;
     }
@@ -163,7 +196,15 @@ public class FluentConfiguration implements Configuration {
     }
 
     @Override
-    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
-        return exportFieldsMap;
+    public Map<String, DataExportProperties> getResourceExportProperties() {
+        Map<String, DataExportProperties> result = new HashMap<>();
+        exportFieldsMap.forEach((resourceType, dataExportProperties) -> result.put(resourceType.getName(),
+                dataExportProperties));
+        return result;
+    }
+
+    @Override
+    public Map<String, DataExportExecution> getDataExportExecutions() {
+        return dataExportExecutionMap;
     }
 }

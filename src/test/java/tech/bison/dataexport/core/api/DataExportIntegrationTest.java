@@ -68,7 +68,7 @@ class DataExportIntegrationTest {
 
     var result = dataExport.execute();
 
-    assertThat(result.getResourceSummary(ExportableResourceType.ORDER)).isEqualTo(ResourceExportResult.SUCCESS);
+    assertThat(result.getResourceSummary("order")).isEqualTo(ResourceExportResult.SUCCESS);
 
     ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
     verify(cloudStorageUploader)
@@ -99,7 +99,7 @@ class DataExportIntegrationTest {
 
     var result = dataExport.execute();
 
-    assertThat(result.getResourceSummary(ExportableResourceType.CUSTOMER)).isEqualTo(ResourceExportResult.SUCCESS);
+    assertThat(result.getResourceSummary("customer")).isEqualTo(ResourceExportResult.SUCCESS);
 
     ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
     verify(cloudStorageUploader)

@@ -15,9 +15,5 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-import java.util.function.Function;
-
-@FunctionalInterface
-public interface DataExporterProvider extends Function<ExportableResourceType, DataExporter> {
-
+public record DataExportExecution(DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
 }
