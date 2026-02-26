@@ -8,5 +8,5 @@
 ## Commit Messages
 
 - Separate subject from body with a blank line
-- Capitalize the subject line
+- Start the subject line with a lowercase letter
 - Do not end the subject line with a period
