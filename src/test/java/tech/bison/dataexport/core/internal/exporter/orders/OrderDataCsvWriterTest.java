@@ -27,8 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 
 import java.io.IOException;
 import java.time.ZoneId;
@@ -48,8 +46,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "customerId", "createdAt"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("orderNumber", "customerId", "createdAt");
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .id("order-id")
@@ -66,8 +64,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_withPositionFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("orderNumber", "lineItems.id", "lineItems.quantity"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("orderNumber", "lineItems.id", "lineItems.quantity");
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .orderNumber("12345")
@@ -85,8 +83,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_centPrecisionPriceField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER, List.of("totalPrice"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("totalPrice");
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .totalPrice(CentPrecisionMoney.builder().centAmount(195L).currencyCode("CHF").fractionDigits(2).buildUnchecked())
@@ -100,9 +98,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_withVariantAttributeField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER,
-                List.of("orderNumber", "lineItems.variant.attributes.color"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("orderNumber", "lineItems.variant.attributes.color");
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var order = Order.builder()
                 .orderNumber("12345")
@@ -125,9 +122,8 @@ class OrderDataCsvWriterTest {
     @Test
     void writeRow_withExpandedVariantReferenceAttributeField_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.ORDER,
-                List.of("orderNumber", "lineItems.variant.attributes.supplierCategory.obj.name"));
-        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("orderNumber", "lineItems.variant.attributes.supplierCategory.obj.name");
+        var csvDataWriter = new OrderDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var supplierCategoryValue = Map.of(
                 "typeId", "category",

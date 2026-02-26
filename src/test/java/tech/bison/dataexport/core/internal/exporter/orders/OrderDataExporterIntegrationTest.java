@@ -12,19 +12,6 @@
  */
 package tech.bison.dataexport.core.internal.exporter.orders;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import com.commercetools.api.models.order.Order;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -36,59 +23,65 @@ import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+
 @WireMockTest
 class OrderDataExporterIntegrationTest {
 
-  private Context context;
+    private Context context;
 
-  @BeforeEach
-  void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
-    String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
-    var configuration = new FluentConfiguration().withApiProperties(
-        new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth", "integrationtest"));
-    stubFor(post(urlEqualTo("/auth"))
-        .willReturn(aResponse().withBodyFile("token.json")));
-    context = new Context(configuration);
-  }
+    @BeforeEach
+    void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
+        var configuration = new FluentConfiguration().withApiProperties(
+                new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth", "integrationtest"));
+        stubFor(post(urlEqualTo("/auth"))
+                .willReturn(aResponse().withBodyFile("token.json")));
+        context = new Context(configuration);
+    }
 
-  @Test
-  void export_allOrdersWithinPageLimit_fetchAllOrdersAndWrite() {
-    var orderDataExporter = new OrderDataExporter();
+    @Test
+    void export_allOrdersWithinPageLimit_fetchAllOrdersAndWrite() {
+        var orderDataExporter = new OrderDataExporter();
 
-    stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-        .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
-        .willReturn(
-            aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .willReturn(
+                        aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
 
-    var orderDataWriter = mock(DataWriter.class);
+        var orderDataWriter = mock(DataWriter.class);
 
-    orderDataExporter.export(context, orderDataWriter);
+        orderDataExporter.export(context, orderDataWriter);
 
-    verify(orderDataWriter).writeRow(any(Order.class));
-  }
+        verify(orderDataWriter).writeRow(any(Order.class));
+    }
 
-  @Test
-  void export_allOrdersMultiplePages_fetchAllOrdersAndWrite() {
-    var orderDataExporter = new OrderDataExporter();
+    @Test
+    void export_allOrdersMultiplePages_fetchAllOrdersAndWrite() {
+        var orderDataExporter = new OrderDataExporter();
 
-    stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-        .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
-        .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
 
-    stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-        .withQueryParam("offset", equalTo("50"))
-        .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
-        .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("offset", equalTo("50"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
 
-    var orderDataWriter = mock(DataWriter.class);
-    ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-    doNothing().when(orderDataWriter).writeRow(orderCaptor.capture());
+        var orderDataWriter = mock(DataWriter.class);
+        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        doNothing().when(orderDataWriter).writeRow(orderCaptor.capture());
 
-    orderDataExporter.export(context, orderDataWriter);
+        orderDataExporter.export(context, orderDataWriter);
 
-    var allCapturedOrders = orderCaptor.getAllValues();
-    assertThat(allCapturedOrders).hasSize(2);
-    assertThat(allCapturedOrders.get(0).getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
-    assertThat(allCapturedOrders.get(1).getId()).isEqualTo("ef4b1425-3c39-4380-bff1-7d683b1e237f");
-  }
+        var allCapturedOrders = orderCaptor.getAllValues();
+        assertThat(allCapturedOrders).hasSize(2);
+        assertThat(allCapturedOrders.get(0).getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
+        assertThat(allCapturedOrders.get(1).getId()).isEqualTo("ef4b1425-3c39-4380-bff1-7d683b1e237f");
+    }
 }

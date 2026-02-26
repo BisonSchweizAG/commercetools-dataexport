@@ -23,31 +23,31 @@ import tech.bison.dataexport.core.api.executor.DataWriter;
 
 public class OrderDataExporter implements DataExporter {
 
-  static final Long QUERY_RESULT_LIMIT = 50L;
-  static final String LINE_ITEMS_VARIANT_ATTRIBUTES = "lineItems[*].variant.attributes[*].value";
+    static final Long QUERY_RESULT_LIMIT = 50L;
+    static final String LINE_ITEMS_VARIANT_ATTRIBUTES = "lineItems[*].variant.attributes[*].value";
 
-  @Override
-  public void export(Context context, DataWriter dataWriter) {
-    var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
-        .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-        .withSort("createdAt desc")
-        .executeBlocking()
-        .getBody();
-    ordersResponse.getResults().forEach(dataWriter::writeRow);
-    for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
-      ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
-      ordersResponse.getResults().forEach(dataWriter::writeRow);
+    @Override
+    public void export(Context context, DataWriter dataWriter) {
+        var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
+                .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
+        ordersResponse.getResults().forEach(dataWriter::writeRow);
+        for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
+            ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
+            ordersResponse.getResults().forEach(dataWriter::writeRow);
+        }
     }
-  }
 
 
-  private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
-    return projectApiRoot.orders().get()
-        .withLimit(QUERY_RESULT_LIMIT)
-        .withOffset(offset)
-        .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-        .withSort("createdAt desc")
-        .executeBlocking()
-        .getBody();
-  }
+    private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
+        return projectApiRoot.orders().get()
+                .withLimit(QUERY_RESULT_LIMIT)
+                .withOffset(offset)
+                .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
+                .withSort("createdAt desc")
+                .executeBlocking()
+                .getBody();
+    }
 }

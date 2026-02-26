@@ -17,5 +17,5 @@ package tech.bison.dataexport.core.api.upload;
 
 public interface ExportDataUploader {
 
-  void upload(String name, byte[] data);
+    void upload(String name, byte[] data);
 }

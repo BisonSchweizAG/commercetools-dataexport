@@ -20,12 +20,10 @@ import com.commercetools.api.defaultconfig.ApiRootBuilder;
 import io.vrap.rmf.base.client.oauth2.ClientCredentials;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
 import tech.bison.dataexport.core.api.configuration.Configuration;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Map;
 
 public class Context {
 
@@ -45,10 +43,6 @@ public class Context {
             return configuration.getApiRoot();
         }
         return createProjectApiRoot(configuration.getApiProperties());
-    }
-
-    public Map<ExportableResourceType, DataExportProperties> getResourceExportProperties() {
-        return configuration.getResourceExportProperties();
     }
 
     public Integer getMaxRecordsPerUpload() {

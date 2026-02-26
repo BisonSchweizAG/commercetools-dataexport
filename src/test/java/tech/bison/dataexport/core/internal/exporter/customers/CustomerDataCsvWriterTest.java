@@ -24,16 +24,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
-import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerDataCsvWriterTest {
@@ -44,8 +40,8 @@ class CustomerDataCsvWriterTest {
     @Test
     void writeRow_simpleTopLevelFields_printCsvRecord() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"));
-        var csvDataWriter = new CustomerDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("id", "email", "customerNumber");
+        var csvDataWriter = new CustomerDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var customer = Customer.builder()
                 .id("customer-id")
@@ -64,9 +60,8 @@ class CustomerDataCsvWriterTest {
     @Test
     void writeRow_withAddressesFields_printParentAndAddressChildRecords() throws IOException {
         var csvPrinter = mock(CSVPrinter.class);
-        var properties = new DataExportProperties(ExportableResourceType.CUSTOMER,
-                List.of("id", "email", "addresses.postalCode", "addresses.city"));
-        var csvDataWriter = new CustomerDataCsvWriter(csvPrinter, properties, JsonUtils.createObjectMapper());
+        var fields = List.of("id", "email", "addresses.postalCode", "addresses.city");
+        var csvDataWriter = new CustomerDataCsvWriter(csvPrinter, fields, JsonUtils.createObjectMapper());
 
         var customer = Customer.builder()
                 .id("customer-id")

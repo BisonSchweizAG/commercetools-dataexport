@@ -35,8 +35,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
 @ExtendWith(MockitoExtension.class)
 class DataExportExecutorTest {
@@ -49,10 +47,6 @@ class DataExportExecutorTest {
     @Test
     void execute_allDataExportCommands() {
         var context = mock(Context.class);
-        var orderProperties = new DataExportProperties(ORDER, List.of());
-        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
-        when(context.getResourceExportProperties()).thenReturn(
-                Map.of(ORDER, orderProperties, CUSTOMER, customerProperties));
         when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
         when(context.getMaxRecordsPerUpload()).thenReturn(null);
         when(context.getOutputFileExtension()).thenReturn("csv");
@@ -64,18 +58,17 @@ class DataExportExecutorTest {
         var executor = createDataExportExecutor(exporterSuccess, exporterFailure);
         DataExportResult result = executor.execute(context);
 
-        assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00.csv"),
+        assertThat(result.getResourceSummary("order")).isEqualTo(SUCCESS);
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00.csv"),
                 any(byte[].class));
-        assertThat(result.getResourceSummary(CUSTOMER)).isEqualTo(FAILED);
+        assertThat(result.getResourceSummary("customer")).isEqualTo(FAILED);
 
     }
 
     @Test
     void execute_withMaxRecordsPerUpload_uploadsChunkedFiles() {
         var context = mock(Context.class);
-        var orderProperties = new DataExportProperties(ORDER, List.of("id"));
-        when(context.getResourceExportProperties()).thenReturn(Map.of(ORDER, orderProperties));
+        var orderProperties = new DataExportProperties(List.of("id"));
         when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
         when(context.getMaxRecordsPerUpload()).thenReturn(2);
         when(context.getOutputFileExtension()).thenReturn("csv");
@@ -91,34 +84,31 @@ class DataExportExecutorTest {
             return null;
         }).when(exporter).export(any(), any());
 
-        var executor = new DataExportExecutor(List.of(exportDataUploader), _ -> exporter,
-                (_, outputStream) -> _ -> {
+        var executor = new DataExportExecutor(List.of(exportDataUploader), Map.of("order",
+                new DataExportExecution(orderProperties, exporter, (_, outputStream) -> _ -> {
                     try {
                         outputStream.write("record\n".getBytes(StandardCharsets.UTF_8));
                     } catch (java.io.IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                });
+                })));
 
         DataExportResult result = executor.execute(context);
 
-        assertThat(result.getResourceSummary(ORDER)).isEqualTo(SUCCESS);
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_001.csv"),
+        assertThat(result.getResourceSummary("order")).isEqualTo(SUCCESS);
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_001.csv"),
                 any(byte[].class));
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_002.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_002.csv"),
                 any(byte[].class));
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_003.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_003.csv"),
                 any(byte[].class));
     }
 
     private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
-        DataExporterProvider dataExporterProvider = resourceType -> {
-            if (resourceType == ORDER) {
-                return exporterSuccess;
-            } else {
-                return exporterFailure;
-            }
-        };
-        return new DataExportExecutor(List.of(exportDataUploader), dataExporterProvider, (_, _) -> dataWriter);
+        var orderProperties = new DataExportProperties(List.of());
+        var customerProperties = new DataExportProperties(List.of());
+        return new DataExportExecutor(List.of(exportDataUploader),
+                Map.of("order", new DataExportExecution(orderProperties, exporterSuccess, (_, _) -> dataWriter),
+                        "customer", new DataExportExecution(customerProperties, exporterFailure, (_, _) -> dataWriter)));
     }
 }

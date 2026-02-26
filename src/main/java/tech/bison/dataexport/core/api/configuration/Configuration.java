@@ -16,28 +16,26 @@
 package tech.bison.dataexport.core.api.configuration;
 
 import com.commercetools.api.client.ProjectApiRoot;
+import tech.bison.dataexport.core.api.executor.DataExportExecution;
+import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import tech.bison.dataexport.core.api.executor.DataWriterProvider;
-import tech.bison.dataexport.core.api.executor.ExportableResourceType;
-import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 public interface Configuration {
 
-  ProjectApiRoot getApiRoot();
+    ProjectApiRoot getApiRoot();
 
-  CommercetoolsProperties getApiProperties();
+    CommercetoolsProperties getApiProperties();
 
-  List<ExportDataUploader> getExportDataUploaders();
+    List<ExportDataUploader> getExportDataUploaders();
 
-  Map<ExportableResourceType, DataExportProperties> getResourceExportProperties();
+    Map<String, DataExportExecution> getDataExportExecutions();
 
-  DataWriterProvider getDataWriterProvider();
+    String getOutputFileExtension();
 
-  String getOutputFileExtension();
+    Integer getMaxRecordsPerUpload();
 
-  Integer getMaxRecordsPerUpload();
-
-  Clock getClock();
+    Clock getClock();
 }
