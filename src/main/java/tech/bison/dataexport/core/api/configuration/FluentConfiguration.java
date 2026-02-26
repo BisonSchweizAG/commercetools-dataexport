@@ -132,7 +132,12 @@ public class FluentConfiguration implements Configuration {
      * Configures a custom exporter implementation and writer provider for the given export key.
      */
     public FluentConfiguration withCustomExporter(String exportKey, DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
-        registerDataExportExecution(exportKey, new DataExportProperties(List.of()), dataExporter,
+        String normalizedExportKey = normalizeExportKey(exportKey);
+        if (!isCustomExport(normalizedExportKey)) {
+            throw new DataExportException(
+                    String.format("Custom exporter key '%s' is reserved for built-in exports.", normalizedExportKey));
+        }
+        registerDataExportExecution(normalizedExportKey, new DataExportProperties(List.of()), dataExporter,
                 dataWriterProvider);
         return this;
     }
@@ -164,15 +169,20 @@ public class FluentConfiguration implements Configuration {
     private void registerDataExportExecution(String exportKey, DataExportProperties dataExportProperties,
                                              DataExporter dataExporter,
                                              DataWriterProvider dataWriterProvider) {
-        String normalizedExportKey = Objects.requireNonNull(exportKey, "exportKey must not be null.").trim();
-        if (normalizedExportKey.isEmpty()) {
-            throw new IllegalArgumentException("exportKey must not be blank.");
-        }
+        String normalizedExportKey = normalizeExportKey(exportKey);
         Objects.requireNonNull(dataExportProperties, "dataExportProperties must not be null.");
         Objects.requireNonNull(dataExporter, "dataExporter must not be null.");
         Objects.requireNonNull(dataWriterProvider, "dataWriterProvider must not be null.");
         this.dataExportExecutionMap.put(normalizedExportKey, new DataExportExecution(dataExportProperties,
                 dataExporter, dataWriterProvider));
+    }
+
+    private String normalizeExportKey(String exportKey) {
+        String normalizedExportKey = Objects.requireNonNull(exportKey, "exportKey must not be null.").trim();
+        if (normalizedExportKey.isEmpty()) {
+            throw new IllegalArgumentException("exportKey must not be blank.");
+        }
+        return normalizedExportKey;
     }
 
 

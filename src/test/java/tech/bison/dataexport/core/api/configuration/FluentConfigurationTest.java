@@ -180,6 +180,18 @@ class FluentConfigurationTest {
                 .hasMessage("exportKey must not be blank.");
     }
 
+    @Test
+    void load_withCustomExporterAndBuiltInExportKey_throwsException() {
+        var configuration = new FluentConfiguration()
+                .withApiRoot(mock(ProjectApiRoot.class))
+                .withUploader(exportDataUploader);
+
+        assertThatThrownBy(() -> configuration.withCustomExporter("order", customDataExporter,
+                customDataWriterProvider))
+                .isInstanceOf(DataExportException.class)
+                .hasMessage("Custom exporter key 'order' is reserved for built-in exports.");
+    }
+
     private CommercetoolsProperties createValidCommercetoolsProperties() {
         return new CommercetoolsProperties("clientId", "clientSecret", "authUrl", "apiUrl", "projectKey");
     }
