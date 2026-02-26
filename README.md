@@ -37,6 +37,9 @@ DataExport dataExport = DataExport.configure()
         .load();
 ```
 
+The configuration above will export all orders to the gcp cloud storage bucket in the following structure:
+/orders/orders_YYYY_MM_DD_HH_mm_ss.csv
+
 Fields can be configured with the dot notation according to the commercetools api documentation.
 
 The money type centPrecision can be configured with a short hand notation by just referring to the parent field name.
@@ -49,6 +52,10 @@ DataExport dataExport = DataExport.configure()
         .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"))
         .load();
 ```
+
+## Other configuration options
+
+### Export child items
 
 Some resource types support child items. Child items are added to the csv file below the parent item. For child item
 lines all parent field values will be empty. <br>Child item fields can be configured with the dot notation:
@@ -67,8 +74,6 @@ Examples:
 
 - `lineItems.variant.attributes.color`
 - `lineItems.variant.attributes.supplierCategory.obj.name`
-
-## Other configuration options
 
 ### Limit number of records in the upload
 

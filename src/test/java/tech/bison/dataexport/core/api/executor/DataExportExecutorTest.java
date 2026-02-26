@@ -59,7 +59,7 @@ class DataExportExecutorTest {
         DataExportResult result = executor.execute(context);
 
         assertThat(result.getResourceSummary("order")).isEqualTo(SUCCESS);
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00.csv"),
                 any(byte[].class));
         assertThat(result.getResourceSummary("customer")).isEqualTo(FAILED);
 
@@ -96,11 +96,11 @@ class DataExportExecutorTest {
         DataExportResult result = executor.execute(context);
 
         assertThat(result.getResourceSummary("order")).isEqualTo(SUCCESS);
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_001.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_001.csv"),
                 any(byte[].class));
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_002.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_002.csv"),
                 any(byte[].class));
-        verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_003.csv"),
+        verify(exportDataUploader, times(1)).upload(eq("order/order_2026_01_01_10_00_00_part_003.csv"),
                 any(byte[].class));
     }
 

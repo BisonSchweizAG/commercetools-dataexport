@@ -79,7 +79,7 @@ public class FluentConfiguration implements Configuration {
 
     private boolean isCustomExport(String key) {
         return Arrays.stream(ExportableResourceType.values())
-                .map(ExportableResourceType::getName)
+                .map(ExportableResourceType::getPluralName)
                 .noneMatch(name -> name.equals(key));
     }
 
@@ -122,7 +122,7 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
         Objects.requireNonNull(resourceType, "resourceType must not be null.");
-        registerDataExportExecution(resourceType.getName(), new DataExportProperties(exportFields),
+        registerDataExportExecution(resourceType.getPluralName(), new DataExportProperties(exportFields),
                 createDataExporter(resourceType),
                 createDataWriterProvider(resourceType));
         return this;

@@ -71,7 +71,7 @@ public class DataExportExecutor {
     private String getBlobName(String exportKey, Clock clock, String fileExtension,
                                Integer chunkNumber) {
         String normalizedExtension = fileExtension.startsWith(".") ? fileExtension.substring(1) : fileExtension;
-        String baseName = String.format("%ss/%ss_%s", exportKey, exportKey,
+        String baseName = String.format("%s/%s_%s", exportKey, exportKey,
                 LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")));
         if (chunkNumber == null) {
             return String.format("%s.%s", baseName, normalizedExtension);

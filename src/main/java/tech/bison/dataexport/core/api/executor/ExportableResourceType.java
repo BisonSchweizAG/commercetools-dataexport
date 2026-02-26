@@ -16,16 +16,18 @@
 package tech.bison.dataexport.core.api.executor;
 
 public enum ExportableResourceType {
-    ORDER("order"),
-    CUSTOMER("customer");
+    ORDER("orders"),
+    CUSTOMER("customers");
 
-    private final String name;
+    private final String pluralName;
 
-    ExportableResourceType(String name) {
-        this.name = name;
+    ExportableResourceType(String pluralName) {
+        this.pluralName = pluralName;
     }
 
-    public String getName() {
-        return name;
+    public String getPluralName() {
+        return pluralName;
     }
+
+
 }

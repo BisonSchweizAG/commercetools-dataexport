@@ -186,10 +186,10 @@ class FluentConfigurationTest {
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader);
 
-        assertThatThrownBy(() -> configuration.withCustomExporter("order", customDataExporter,
+        assertThatThrownBy(() -> configuration.withCustomExporter(ORDER.getPluralName(), customDataExporter,
                 customDataWriterProvider))
                 .isInstanceOf(DataExportException.class)
-                .hasMessage("Custom exporter key 'order' is reserved for built-in exports.");
+                .hasMessage("Custom exporter key 'orders' is reserved for built-in exports.");
     }
 
     private CommercetoolsProperties createValidCommercetoolsProperties() {
