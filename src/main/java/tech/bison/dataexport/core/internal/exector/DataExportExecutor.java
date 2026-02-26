@@ -48,18 +48,13 @@ public class DataExportExecutor {
 
     public DataExportResult execute(Context context) {
         DataExportResult dataExportResult = DataExportResult.empty();
-        var resourceExportProperties = context.getResourceExportProperties();
         for (var entry : dataExportExecutions.entrySet()) {
             var exportKey = entry.getKey();
             LOG.info("Running data export for resource '{}'.", exportKey);
             try {
                 DataExportExecution dataExportExecution = entry.getValue();
-                DataExportProperties dataExportProperties = resourceExportProperties.get(exportKey);
-                if (dataExportProperties == null) {
-                    throw new IllegalArgumentException("No export properties configured for export key: " + exportKey);
-                }
-                DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey, dataExportProperties, context,
-                        dataExportExecution.dataWriterProvider());
+                DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey,
+                        dataExportExecution.dataExportProperties(), context, dataExportExecution.dataWriterProvider());
                 dataExportExecution.dataExporter().export(context, dataWriter);
                 dataWriter.flush();
                 dataExportResult.addResult(exportKey, SUCCESS);

@@ -15,5 +15,8 @@
  */
 package tech.bison.dataexport.core.api.executor;
 
-public record DataExportExecution(DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
+import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+
+public record DataExportExecution(DataExportProperties dataExportProperties, DataExporter dataExporter,
+                                  DataWriterProvider dataWriterProvider) {
 }

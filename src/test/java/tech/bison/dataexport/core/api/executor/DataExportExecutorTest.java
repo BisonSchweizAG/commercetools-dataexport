@@ -49,10 +49,6 @@ class DataExportExecutorTest {
     @Test
     void execute_allDataExportCommands() {
         var context = mock(Context.class);
-        var orderProperties = new DataExportProperties(ORDER, List.of());
-        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
-        when(context.getResourceExportProperties()).thenReturn(
-                Map.of("order", orderProperties, "customer", customerProperties));
         when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
         when(context.getMaxRecordsPerUpload()).thenReturn(null);
         when(context.getOutputFileExtension()).thenReturn("csv");
@@ -75,7 +71,6 @@ class DataExportExecutorTest {
     void execute_withMaxRecordsPerUpload_uploadsChunkedFiles() {
         var context = mock(Context.class);
         var orderProperties = new DataExportProperties(ORDER, List.of("id"));
-        when(context.getResourceExportProperties()).thenReturn(Map.of("order", orderProperties));
         when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
         when(context.getMaxRecordsPerUpload()).thenReturn(2);
         when(context.getOutputFileExtension()).thenReturn("csv");
@@ -92,7 +87,7 @@ class DataExportExecutorTest {
         }).when(exporter).export(any(), any());
 
         var executor = new DataExportExecutor(List.of(exportDataUploader), Map.of("order",
-                new DataExportExecution(exporter, (_, outputStream) -> _ -> {
+                new DataExportExecution(orderProperties, exporter, (_, outputStream) -> _ -> {
                     try {
                         outputStream.write("record\n".getBytes(StandardCharsets.UTF_8));
                     } catch (java.io.IOException ex) {
@@ -112,8 +107,10 @@ class DataExportExecutorTest {
     }
 
     private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
+        var orderProperties = new DataExportProperties(ORDER, List.of());
+        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
         return new DataExportExecutor(List.of(exportDataUploader),
-                Map.of("order", new DataExportExecution(exporterSuccess, (_, _) -> dataWriter),
-                        "customer", new DataExportExecution(exporterFailure, (_, _) -> dataWriter)));
+                Map.of("order", new DataExportExecution(orderProperties, exporterSuccess, (_, _) -> dataWriter),
+                        "customer", new DataExportExecution(customerProperties, exporterFailure, (_, _) -> dataWriter)));
     }
 }

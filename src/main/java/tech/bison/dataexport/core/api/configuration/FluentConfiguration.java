@@ -20,8 +20,8 @@ import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.DataExport;
-import tech.bison.dataexport.core.api.executor.DataExportExecution;
 import tech.bison.dataexport.core.api.exception.DataExportException;
+import tech.bison.dataexport.core.api.executor.DataExportExecution;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
@@ -47,8 +47,6 @@ public class FluentConfiguration implements Configuration {
     private String outputFileExtension = "csv";
     private Integer maxRecordsPerUpload;
     private final List<ExportDataUploader> uploaderList = new ArrayList<>();
-    private final Map<ExportableResourceType, DataExportProperties> exportFieldsMap = new EnumMap<>(
-            ExportableResourceType.class);
     private final Map<String, DataExportExecution> dataExportExecutionMap = new HashMap<>();
 
     /**
@@ -64,10 +62,11 @@ public class FluentConfiguration implements Configuration {
             throw new DataExportException(
                     "Missing commercetools api configuration. Either use withApiProperties() or withApiRoot().");
         }
-        if (exportFieldsMap.isEmpty()) {
+        if (dataExportExecutionMap.isEmpty()) {
             throw new DataExportException("At least one export type must be configured.");
         }
-        if (exportFieldsMap.values().stream().anyMatch(fields -> fields.fields().isEmpty())) {
+        if (dataExportExecutionMap.values().stream()
+                .anyMatch(execution -> execution.dataExportProperties().fields().isEmpty())) {
             throw new DataExportException("At least one export type has no fields configured.");
         }
         if (uploaderList.isEmpty()) {
@@ -117,9 +116,9 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
         String exportKey = resourceType.getName();
-        this.exportFieldsMap.put(resourceType, new DataExportProperties(resourceType, exportFields));
-        this.dataExportExecutionMap.put(exportKey, new DataExportExecution(createDataExporter(resourceType),
-                createDataWriterProvider(resourceType)));
+        var dataExportProperties = new DataExportProperties(resourceType, exportFields);
+        this.dataExportExecutionMap.put(exportKey, new DataExportExecution(dataExportProperties,
+                createDataExporter(resourceType), createDataWriterProvider(resourceType)));
         return this;
     }
 
@@ -193,14 +192,6 @@ public class FluentConfiguration implements Configuration {
     @Override
     public List<ExportDataUploader> getExportDataUploaders() {
         return uploaderList;
-    }
-
-    @Override
-    public Map<String, DataExportProperties> getResourceExportProperties() {
-        Map<String, DataExportProperties> result = new HashMap<>();
-        exportFieldsMap.forEach((resourceType, dataExportProperties) -> result.put(resourceType.getName(),
-                dataExportProperties));
-        return result;
     }
 
     @Override
