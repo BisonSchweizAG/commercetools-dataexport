@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.exception.DataExportException;
+import tech.bison.dataexport.core.api.executor.DataExporter;
+import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 import java.util.List;
@@ -33,6 +35,10 @@ class FluentConfigurationTest {
 
     @Mock
     private ExportDataUploader exportDataUploader;
+    @Mock
+    private DataExporter customDataExporter;
+    @Mock
+    private DataWriterProvider customDataWriterProvider;
 
     @Test
     void load_withMissingApiConfiguration_throwsException() {
@@ -137,7 +143,7 @@ class FluentConfigurationTest {
     }
 
     @Test
-    void withMaxRecordsPerUpload_setsValue() {
+    void load_withMaxRecordsPerUpload_setsValue() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
@@ -146,6 +152,32 @@ class FluentConfigurationTest {
 
         assertThat(configuration.getMaxRecordsPerUpload()).isEqualTo(500);
         assertThat(configuration.load()).isNotNull();
+    }
+
+    @Test
+    void load_withCustomExporter_registersCustomExecution() {
+        var configuration = new FluentConfiguration()
+                .withApiRoot(mock(ProjectApiRoot.class))
+                .withUploader(exportDataUploader)
+                .withCustomExporter("custom-export", customDataExporter, customDataWriterProvider);
+
+        var dataExportExecution = configuration.getDataExportExecutions().get("custom-export");
+        assertThat(dataExportExecution).isNotNull();
+        assertThat(dataExportExecution.dataExporter()).isEqualTo(customDataExporter);
+        assertThat(dataExportExecution.dataWriterProvider()).isEqualTo(customDataWriterProvider);
+        assertThat(configuration.load()).isNotNull();
+    }
+
+    @Test
+    void load_withCustomExporterAndBlankExportKey_throwsException() {
+        var configuration = new FluentConfiguration()
+                .withApiRoot(mock(ProjectApiRoot.class))
+                .withUploader(exportDataUploader);
+
+        assertThatThrownBy(() -> configuration.withCustomExporter(" ", customDataExporter,
+                customDataWriterProvider))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("exportKey must not be blank.");
     }
 
     private CommercetoolsProperties createValidCommercetoolsProperties() {

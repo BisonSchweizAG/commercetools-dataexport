@@ -65,8 +65,8 @@ public class FluentConfiguration implements Configuration {
         if (dataExportExecutionMap.isEmpty()) {
             throw new DataExportException("At least one export type must be configured.");
         }
-        if (dataExportExecutionMap.values().stream()
-                .anyMatch(execution -> execution.dataExportProperties().fields().isEmpty())) {
+        if (dataExportExecutionMap.entrySet().stream()
+                .anyMatch(entry -> !isCustomExport(entry.getKey()) && entry.getValue().dataExportProperties().fields().isEmpty())) {
             throw new DataExportException("At least one export type has no fields configured.");
         }
         if (uploaderList.isEmpty()) {
@@ -75,6 +75,12 @@ public class FluentConfiguration implements Configuration {
         if (maxRecordsPerUpload != null && maxRecordsPerUpload < 1) {
             throw new DataExportException("maxRecordsPerUpload must be greater than 0.");
         }
+    }
+
+    private boolean isCustomExport(String key) {
+        return Arrays.stream(ExportableResourceType.values())
+                .map(ExportableResourceType::getName)
+                .noneMatch(name -> name.equals(key));
     }
 
     /**
@@ -115,10 +121,19 @@ public class FluentConfiguration implements Configuration {
      * Configures the fields to be exported for the given resource types.
      */
     public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
-        String exportKey = resourceType.getName();
-        var dataExportProperties = new DataExportProperties(exportFields);
-        this.dataExportExecutionMap.put(exportKey, new DataExportExecution(dataExportProperties,
-                createDataExporter(resourceType), createDataWriterProvider(resourceType)));
+        Objects.requireNonNull(resourceType, "resourceType must not be null.");
+        registerDataExportExecution(resourceType.getName(), new DataExportProperties(exportFields),
+                createDataExporter(resourceType),
+                createDataWriterProvider(resourceType));
+        return this;
+    }
+
+    /**
+     * Configures a custom exporter implementation and writer provider for the given export key.
+     */
+    public FluentConfiguration withCustomExporter(String exportKey, DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
+        registerDataExportExecution(exportKey, new DataExportProperties(List.of()), dataExporter,
+                dataWriterProvider);
         return this;
     }
 
@@ -144,6 +159,20 @@ public class FluentConfiguration implements Configuration {
                 throw new DataExportException("Error creating CSVPrinter.", ex);
             }
         };
+    }
+
+    private void registerDataExportExecution(String exportKey, DataExportProperties dataExportProperties,
+                                             DataExporter dataExporter,
+                                             DataWriterProvider dataWriterProvider) {
+        String normalizedExportKey = Objects.requireNonNull(exportKey, "exportKey must not be null.").trim();
+        if (normalizedExportKey.isEmpty()) {
+            throw new IllegalArgumentException("exportKey must not be blank.");
+        }
+        Objects.requireNonNull(dataExportProperties, "dataExportProperties must not be null.");
+        Objects.requireNonNull(dataExporter, "dataExporter must not be null.");
+        Objects.requireNonNull(dataWriterProvider, "dataWriterProvider must not be null.");
+        this.dataExportExecutionMap.put(normalizedExportKey, new DataExportExecution(dataExportProperties,
+                dataExporter, dataWriterProvider));
     }
 
 

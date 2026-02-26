@@ -43,9 +43,10 @@ The money type centPrecision can be configured with a short hand notation by jus
 The exported value will be the centAmount divided by fraction digits.
 Example:
 
-```
-DataExport.configure()
-    .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice","lineItems.taxedPrice.totalNet")
+```java
+DataExport dataExport = DataExport.configure()
+        // ...
+        .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet")
 ```
 
 Some resource types support child items. Child items are added to the csv file below the parent item. For child item
@@ -66,15 +67,34 @@ Examples:
 - `lineItems.variant.attributes.color`
 - `lineItems.variant.attributes.supplierCategory.obj.name`
 
+## Other configuration options
+
+### Limit number of records in the upload
+
 The uploaded files can be chunked by the number of records. If the max records per upload is reached a new file will be
 created.
 Example:
 
 ```java
 DataExport dataExport = DataExport.configure()
+        // ...
         .withMaxRecordsPerUpload(10000)
         .load();
 ```
+
+### Register a custom exporter
+
+If you want full control of the export logic you can configure a custom exporter. Just implement the DataExporter and
+DataWriter interfaces and configure it as follows:
+
+```java
+DataExport dataExport = DataExport.configure()
+        // ...
+        .withCustomExporter("someKey", new CustomExporter(), (fields, outputStream) -> new CustomDataWriter(outputStream))
+        .load();
+```
+
+The key will be used as a prefix for the exported files.
 
 ## Building
 
