@@ -46,7 +46,8 @@ Example:
 ```java
 DataExport dataExport = DataExport.configure()
         // ...
-        .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet")
+        .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"))
+        .load();
 ```
 
 Some resource types support child items. Child items are added to the csv file below the parent item. For child item
