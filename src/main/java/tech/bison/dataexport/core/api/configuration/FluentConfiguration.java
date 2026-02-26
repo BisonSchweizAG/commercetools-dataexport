@@ -116,7 +116,7 @@ public class FluentConfiguration implements Configuration {
      */
     public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
         String exportKey = resourceType.getName();
-        var dataExportProperties = new DataExportProperties(resourceType, exportFields);
+        var dataExportProperties = new DataExportProperties(exportFields);
         this.dataExportExecutionMap.put(exportKey, new DataExportExecution(dataExportProperties,
                 createDataExporter(resourceType), createDataWriterProvider(resourceType)));
         return this;
@@ -130,15 +130,15 @@ public class FluentConfiguration implements Configuration {
     }
 
     private DataWriterProvider createDataWriterProvider(ExportableResourceType resourceType) {
-        return (dataExportProperties, outputStream) -> {
+        return (fields, outputStream) -> {
             try {
                 var csvPrinter = new CSVPrinter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8),
-                        CSVFormat.DEFAULT.builder().setHeader(dataExportProperties.fields().toArray(new String[0]))
+                        CSVFormat.DEFAULT.builder().setHeader(fields.toArray(new String[0]))
                                 .get());
                 var objectMapper = JsonUtils.createObjectMapper();
                 return switch (resourceType) {
-                    case ORDER -> new OrderDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
-                    case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, dataExportProperties, objectMapper);
+                    case ORDER -> new OrderDataCsvWriter(csvPrinter, fields, objectMapper);
+                    case CUSTOMER -> new CustomerDataCsvWriter(csvPrinter, fields, objectMapper);
                 };
             } catch (IOException ex) {
                 throw new DataExportException("Error creating CSVPrinter.", ex);

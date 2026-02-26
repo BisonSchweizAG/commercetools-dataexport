@@ -35,8 +35,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static tech.bison.dataexport.core.api.ResourceExportResult.FAILED;
 import static tech.bison.dataexport.core.api.ResourceExportResult.SUCCESS;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
 @ExtendWith(MockitoExtension.class)
 class DataExportExecutorTest {
@@ -70,7 +68,7 @@ class DataExportExecutorTest {
     @Test
     void execute_withMaxRecordsPerUpload_uploadsChunkedFiles() {
         var context = mock(Context.class);
-        var orderProperties = new DataExportProperties(ORDER, List.of("id"));
+        var orderProperties = new DataExportProperties(List.of("id"));
         when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
         when(context.getMaxRecordsPerUpload()).thenReturn(2);
         when(context.getOutputFileExtension()).thenReturn("csv");
@@ -107,8 +105,8 @@ class DataExportExecutorTest {
     }
 
     private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
-        var orderProperties = new DataExportProperties(ORDER, List.of());
-        var customerProperties = new DataExportProperties(CUSTOMER, List.of());
+        var orderProperties = new DataExportProperties(List.of());
+        var customerProperties = new DataExportProperties(List.of());
         return new DataExportExecutor(List.of(exportDataUploader),
                 Map.of("order", new DataExportExecution(orderProperties, exporterSuccess, (_, _) -> dataWriter),
                         "customer", new DataExportExecution(customerProperties, exporterFailure, (_, _) -> dataWriter)));

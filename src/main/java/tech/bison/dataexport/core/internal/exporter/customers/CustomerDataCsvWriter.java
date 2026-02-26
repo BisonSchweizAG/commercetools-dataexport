@@ -20,7 +20,6 @@ import com.commercetools.api.models.customer.Customer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVPrinter;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 import tech.bison.dataexport.core.internal.exporter.common.CsvWriterSupport;
@@ -32,12 +31,12 @@ public class CustomerDataCsvWriter implements DataWriter {
 
     private static final String ADDRESS_PREFIX = "addresses.";
     private final CSVPrinter csvPrinter;
-    private final DataExportProperties dataExportProperties;
+    private final List<String> fields;
     private final ObjectMapper objectMapper;
 
-    public CustomerDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties, ObjectMapper objectMapper) {
+    public CustomerDataCsvWriter(CSVPrinter csvPrinter, List<String> fields, ObjectMapper objectMapper) {
         this.csvPrinter = csvPrinter;
-        this.dataExportProperties = dataExportProperties;
+        this.fields = fields;
         this.objectMapper = objectMapper;
     }
 
@@ -46,12 +45,12 @@ public class CustomerDataCsvWriter implements DataWriter {
         Customer customer = (Customer) source;
         JsonNode customerNode = objectMapper.valueToTree(source);
 
-        var customerFields = CsvWriterSupport.topLevelFields(dataExportProperties.fields(), ADDRESS_PREFIX);
-        var addressFields = CsvWriterSupport.childItemFields(dataExportProperties.fields(), ADDRESS_PREFIX);
+        var customerFields = CsvWriterSupport.topLevelFields(fields, ADDRESS_PREFIX);
+        var addressFields = CsvWriterSupport.childItemFields(fields, ADDRESS_PREFIX);
         if (!addressFields.isEmpty()) {
             writeRecordsWithAddresses(customer, customerNode, customerFields, addressFields);
         } else {
-            List<String> values = dataExportProperties.fields().stream()
+            List<String> values = fields.stream()
                     .map(field -> CsvWriterSupport.extractValue(customerNode, field))
                     .toList();
             writeRecord(customer, values);

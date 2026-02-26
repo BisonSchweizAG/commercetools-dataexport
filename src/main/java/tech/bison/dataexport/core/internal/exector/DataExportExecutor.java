@@ -18,7 +18,6 @@ package tech.bison.dataexport.core.internal.exector;
 import com.commercetools.api.models.common.BaseResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.executor.*;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
@@ -54,7 +53,8 @@ public class DataExportExecutor {
             try {
                 DataExportExecution dataExportExecution = entry.getValue();
                 DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey,
-                        dataExportExecution.dataExportProperties(), context, dataExportExecution.dataWriterProvider());
+                        dataExportExecution.dataExportProperties().fields(), context,
+                        dataExportExecution.dataWriterProvider());
                 dataExportExecution.dataExporter().export(context, dataWriter);
                 dataWriter.flush();
                 dataExportResult.addResult(exportKey, SUCCESS);
@@ -83,7 +83,7 @@ public class DataExportExecutor {
 
         private final String exportKey;
         private final Context context;
-        private final DataExportProperties dataExportProperties;
+        private final List<String> fields;
         private final DataWriterProvider dataWriterProvider;
         private final Integer maxRecordsPerUpload;
         private final String outputFileExtension;
@@ -94,10 +94,10 @@ public class DataExportExecutor {
         private boolean flushed;
 
         private ChunkedUploadDataWriterWrapper(String exportKey,
-                                               DataExportProperties dataExportProperties, Context context,
+                                               List<String> fields, Context context,
                                                DataWriterProvider dataWriterProvider) {
             this.exportKey = exportKey;
-            this.dataExportProperties = dataExportProperties;
+            this.fields = fields;
             this.context = context;
             this.dataWriterProvider = dataWriterProvider;
             this.maxRecordsPerUpload = context.getMaxRecordsPerUpload();
@@ -134,7 +134,7 @@ public class DataExportExecutor {
 
         private void rotateChunk() {
             outputStream = new ByteArrayOutputStream();
-            dataWriter = dataWriterProvider.create(dataExportProperties, outputStream);
+            dataWriter = dataWriterProvider.create(fields, outputStream);
             recordCountInChunk = 0;
         }
 

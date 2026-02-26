@@ -20,7 +20,6 @@ import com.commercetools.api.models.order.Order;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVPrinter;
-import tech.bison.dataexport.core.api.configuration.DataExportProperties;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 import tech.bison.dataexport.core.internal.exporter.common.CsvWriterSupport;
@@ -34,13 +33,13 @@ public class OrderDataCsvWriter implements DataWriter {
     private static final String LINE_ITEM_PREFIX = "lineItems.";
     private static final String VARIANT_ATTRIBUTES_PREFIX = "variant.attributes.";
     private final CSVPrinter csvPrinter;
-    private final DataExportProperties dataExportProperties;
+    private final List<String> fields;
     private final ObjectMapper objectMapper;
 
-    public OrderDataCsvWriter(CSVPrinter csvPrinter, DataExportProperties dataExportProperties,
+    public OrderDataCsvWriter(CSVPrinter csvPrinter, List<String> fields,
                               ObjectMapper objectMapper) {
         this.csvPrinter = csvPrinter;
-        this.dataExportProperties = dataExportProperties;
+        this.fields = fields;
         this.objectMapper = objectMapper;
     }
 
@@ -49,12 +48,12 @@ public class OrderDataCsvWriter implements DataWriter {
         Order order = (Order) source;
         JsonNode node = objectMapper.valueToTree(source);
 
-        var orderFields = CsvWriterSupport.topLevelFields(dataExportProperties.fields(), LINE_ITEM_PREFIX);
-        var lineItemFields = CsvWriterSupport.childItemFields(dataExportProperties.fields(), LINE_ITEM_PREFIX);
+        var orderFields = CsvWriterSupport.topLevelFields(fields, LINE_ITEM_PREFIX);
+        var lineItemFields = CsvWriterSupport.childItemFields(fields, LINE_ITEM_PREFIX);
         if (!lineItemFields.isEmpty()) {
             writeRecordsWithLineItems(order, node, orderFields, lineItemFields);
         } else {
-            List<String> values = dataExportProperties.fields().stream().map(field -> CsvWriterSupport.extractValue(node, field))
+            List<String> values = fields.stream().map(field -> CsvWriterSupport.extractValue(node, field))
                     .toList();
             writeRecord(order, values);
         }
