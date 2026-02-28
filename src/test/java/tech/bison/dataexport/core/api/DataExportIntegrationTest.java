@@ -89,7 +89,7 @@ class DataExportIntegrationTest {
                 .willReturn(aResponse().withHeader("Content-Type", "application/json")
                         .withBodyFile("export-info-custom-object-updated.json")));
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-                .withQueryParam("where", equalTo("lastModifiedAt > \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("where", equalTo("lastModifiedAt > \"2026-01-01T10:00:00Z\" and lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*].value"))
                 .willReturn(
                         aResponse().withHeader("Content-Type", "application/json")

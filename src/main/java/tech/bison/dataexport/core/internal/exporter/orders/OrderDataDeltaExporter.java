@@ -42,7 +42,8 @@ public class OrderDataDeltaExporter implements DataExporter {
     public void export(Context context, DataWriter dataWriter) {
         var deltaExportInfo = exportInfoRepository.getCurrent(context);
         var lastExportDate = deltaExportInfo.exportTimestamps().get(getResourceKey());
-        String whereClause = getWhereClause(lastExportDate);
+        var upperBound = ZonedDateTime.now(context.getClock().withZone(ZoneOffset.UTC));
+        String whereClause = getWhereClause(lastExportDate, upperBound);
 
         var ordersResponse = loadOrdersPage(context.getProjectApiRoot(), 0L, whereClause);
         ordersResponse.getResults().forEach(dataWriter::writeRow);
@@ -53,7 +54,7 @@ public class OrderDataDeltaExporter implements DataExporter {
         }
 
         var newTimestamps = new HashMap<>(deltaExportInfo.exportTimestamps());
-        newTimestamps.put(getResourceKey(), ZonedDateTime.now(context.getClock().withZone(ZoneOffset.UTC)));
+        newTimestamps.put(getResourceKey(), upperBound);
         exportInfoRepository.update(context, newTimestamps, deltaExportInfo.documentVersion());
     }
 
@@ -61,12 +62,13 @@ public class OrderDataDeltaExporter implements DataExporter {
         return ExportableResourceType.ORDER.getPluralName();
     }
 
-    private static String getWhereClause(ZonedDateTime lastExportDate) {
+    private static String getWhereClause(ZonedDateTime lastExportDate, ZonedDateTime upperBound) {
+        String formattedUpperBound = DateTimeFormatter.ISO_INSTANT.format(upperBound.toInstant());
         if (lastExportDate == null) {
-            return null;
+            return "lastModifiedAt <= \"" + formattedUpperBound + "\"";
         }
-        String formatted = DateTimeFormatter.ISO_INSTANT.format(lastExportDate.toInstant());
-        return "lastModifiedAt > \"" + formatted + "\"";
+        String formattedLastExportDate = DateTimeFormatter.ISO_INSTANT.format(lastExportDate.toInstant());
+        return "lastModifiedAt > \"" + formattedLastExportDate + "\" and lastModifiedAt <= \"" + formattedUpperBound + "\"";
     }
 
     private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset, String whereClause) {
