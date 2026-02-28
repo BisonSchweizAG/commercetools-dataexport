@@ -31,8 +31,8 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 ```java
 DataExport dataExport = DataExport.configure()
         .withApiRoot(projectApiRoot)
-        .withExportFields(ExportableResourceType.ORDER,
-                List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+        .withOrderExport(List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"), ExportMode.FULL)
+        .withCustomerExport(List.of("id", "firstname", "lastName"))
         .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
         .load();
 ```
@@ -49,11 +49,11 @@ Example:
 ```java
 DataExport dataExport = DataExport.configure()
         // ...
-        .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"))
+        .withOrderExport(List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"), ExportMode.FULL)
         .load();
 ```
 
-## Other configuration options
+## Configuration options
 
 ### Export child items
 
@@ -87,6 +87,11 @@ DataExport dataExport = DataExport.configure()
         .withMaxRecordsPerUpload(10000)
         .load();
 ```
+
+### Full and delta export
+
+The built-in resource types do a full export by default. Additionally, the orders resource type supports delta exports.
+Pass the ExportMode.DELTA to the export configuration to enable it.
 
 ### Register a custom exporter
 

@@ -133,40 +133,14 @@ public class FluentConfiguration implements Configuration {
         return withExportFields(ExportableResourceType.CUSTOMER, exportFields, ExportMode.FULL);
     }
 
-
-    /**
-     * Configures the fields and export mode to be exported for the given resource type.
-     */
-    public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields,
-                                                ExportMode exportMode) {
+    private FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields,
+                                                 ExportMode exportMode) {
         Objects.requireNonNull(resourceType, "resourceType must not be null.");
         Objects.requireNonNull(exportMode, "exportMode must not be null.");
         registerDataExportExecution(resourceType.getPluralName(), new DataExportProperties(exportFields, exportMode),
                 createDataExporter(resourceType, exportMode),
                 createDataWriterProvider(resourceType));
         return this;
-    }
-
-    /**
-     * Configures a custom exporter implementation and writer provider for the given export key.
-     */
-    public FluentConfiguration withCustomExporter(String exportKey, DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
-        String normalizedExportKey = normalizeExportKey(exportKey);
-        if (!isCustomExport(normalizedExportKey)) {
-            throw new DataExportException(
-                    String.format("Custom exporter key '%s' is reserved for built-in exports.", normalizedExportKey));
-        }
-        registerDataExportExecution(normalizedExportKey, new DataExportProperties(List.of()), dataExporter,
-                dataWriterProvider);
-        return this;
-    }
-
-    private DataExporter createDataExporter(ExportableResourceType resourceType, ExportMode exportMode) {
-        return switch (resourceType) {
-            case ORDER ->
-                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new ExportInfoRepository(JsonUtils.createObjectMapper()));
-            case CUSTOMER -> new CustomerDataExporter();
-        };
     }
 
     private DataWriterProvider createDataWriterProvider(ExportableResourceType resourceType) {
@@ -186,6 +160,20 @@ public class FluentConfiguration implements Configuration {
         };
     }
 
+    /**
+     * Configures a custom exporter implementation and writer provider for the given export key.
+     */
+    public FluentConfiguration withCustomExporter(String exportKey, DataExporter dataExporter, DataWriterProvider dataWriterProvider) {
+        String normalizedExportKey = normalizeExportKey(exportKey);
+        if (!isCustomExport(normalizedExportKey)) {
+            throw new DataExportException(
+                    String.format("Custom exporter key '%s' is reserved for built-in exports.", normalizedExportKey));
+        }
+        registerDataExportExecution(normalizedExportKey, new DataExportProperties(List.of()), dataExporter,
+                dataWriterProvider);
+        return this;
+    }
+
     private void registerDataExportExecution(String exportKey, DataExportProperties dataExportProperties,
                                              DataExporter dataExporter,
                                              DataWriterProvider dataWriterProvider) {
@@ -196,15 +184,6 @@ public class FluentConfiguration implements Configuration {
         this.dataExportExecutionMap.put(normalizedExportKey, new DataExportExecution(dataExportProperties,
                 dataExporter, dataWriterProvider));
     }
-
-    private String normalizeExportKey(String exportKey) {
-        String normalizedExportKey = Objects.requireNonNull(exportKey, "exportKey must not be null.").trim();
-        if (normalizedExportKey.isEmpty()) {
-            throw new IllegalArgumentException("exportKey must not be blank.");
-        }
-        return normalizedExportKey;
-    }
-
 
     public FluentConfiguration withClock(Clock clock) {
         this.clock = clock;
@@ -221,6 +200,23 @@ public class FluentConfiguration implements Configuration {
         return this;
     }
 
+
+    private DataExporter createDataExporter(ExportableResourceType resourceType, ExportMode exportMode) {
+        return switch (resourceType) {
+            case ORDER ->
+                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new ExportInfoRepository(JsonUtils.createObjectMapper()));
+            case CUSTOMER -> new CustomerDataExporter();
+        };
+    }
+
+
+    private String normalizeExportKey(String exportKey) {
+        String normalizedExportKey = Objects.requireNonNull(exportKey, "exportKey must not be null.").trim();
+        if (normalizedExportKey.isEmpty()) {
+            throw new IllegalArgumentException("exportKey must not be blank.");
+        }
+        return normalizedExportKey;
+    }
 
     @Override
     public CommercetoolsProperties getApiProperties() {
