@@ -27,7 +27,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static tech.bison.dataexport.core.api.executor.ExportableResourceType.CUSTOMER;
+import static tech.bison.dataexport.core.api.configuration.ExportMode.DELTA;
+import static tech.bison.dataexport.core.api.configuration.ExportMode.FULL;
 import static tech.bison.dataexport.core.api.executor.ExportableResourceType.ORDER;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +45,7 @@ class FluentConfigurationTest {
     void load_withMissingApiConfiguration_throwsException() {
         var configuration = new FluentConfiguration()
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id"));
+                .withOrderExport(List.of("id"), FULL);
 
         assertThatThrownBy(configuration::load)
                 .isInstanceOf(DataExportException.class)
@@ -63,11 +64,11 @@ class FluentConfigurationTest {
     }
 
     @Test
-    void load_withExportTypeWithoutFields_throwsException() {
+    void load_withoutFields_throwsException() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of());
+                .withOrderExport(List.of(), FULL);
 
         assertThatThrownBy(configuration::load)
                 .isInstanceOf(DataExportException.class)
@@ -78,7 +79,7 @@ class FluentConfigurationTest {
     void load_withMissingDataExportUploader_throwsException() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
-                .withExportFields(ORDER, List.of("id"));
+                .withOrderExport(List.of("id"), FULL);
 
         assertThatThrownBy(configuration::load)
                 .isInstanceOf(DataExportException.class)
@@ -90,7 +91,7 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiProperties(createValidCommercetoolsProperties())
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id"));
+                .withOrderExport(List.of("id"), FULL);
 
         assertThat(configuration.load()).isNotNull();
     }
@@ -100,7 +101,7 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id"));
+                .withOrderExport(List.of("id"), FULL);
 
         assertThat(configuration.getExportDataUploaders()).containsExactly(exportDataUploader);
         assertThat(configuration.load()).isNotNull();
@@ -111,10 +112,32 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id", "orderNumber"))
-                .withExportFields(CUSTOMER, List.of("id", "name"));
+                .withOrderExport(List.of("id", "orderNumber"), FULL)
+                .withCustomerExport(List.of("id", "name"));
 
         assertThat(configuration.load()).isNotNull();
+    }
+
+    @Test
+    void withExportFields_withoutExportMode_defaultsToFullExportMode() {
+        var configuration = new FluentConfiguration()
+                .withApiRoot(mock(ProjectApiRoot.class))
+                .withUploader(exportDataUploader)
+                .withOrderExport(List.of("id"), FULL);
+
+        var orderExecution = configuration.getDataExportExecutions().get(ORDER.getPluralName());
+        assertThat(orderExecution.dataExportProperties().exportMode()).isEqualTo(FULL);
+    }
+
+    @Test
+    void load_withDeltaExportMode_setsDeltaExportMode() {
+        var configuration = new FluentConfiguration()
+                .withApiRoot(mock(ProjectApiRoot.class))
+                .withUploader(exportDataUploader)
+                .withOrderExport(List.of("id"), DELTA);
+
+        var orderExecution = configuration.getDataExportExecutions().get(ORDER.getPluralName());
+        assertThat(orderExecution.dataExportProperties().exportMode()).isEqualTo(DELTA);
     }
 
     @Test
@@ -123,7 +146,7 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withGcpCloudStorageProperties(gcpProperties)
-                .withExportFields(ORDER, List.of("id"));
+                .withOrderExport(List.of("id"), FULL);
 
         assertThat(configuration.getExportDataUploaders()).hasSize(1);
         assertThat(configuration.load()).isNotNull();
@@ -134,7 +157,7 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id"))
+                .withOrderExport(List.of("id"), FULL)
                 .withMaxRecordsPerUpload(0);
 
         assertThatThrownBy(configuration::load)
@@ -147,7 +170,7 @@ class FluentConfigurationTest {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
-                .withExportFields(ORDER, List.of("id"))
+                .withOrderExport(List.of("id"), FULL)
                 .withMaxRecordsPerUpload(500);
 
         assertThat(configuration.getMaxRecordsPerUpload()).isEqualTo(500);

@@ -21,18 +21,14 @@ import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
-public class OrderDataExporter implements DataExporter {
+public class OrderDataFullExporter implements DataExporter {
 
     static final Long QUERY_RESULT_LIMIT = 50L;
     static final String LINE_ITEMS_VARIANT_ATTRIBUTES = "lineItems[*].variant.attributes[*].value";
 
     @Override
     public void export(Context context, DataWriter dataWriter) {
-        var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
-                .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
+        var ordersResponse = loadOrdersPage(context.getProjectApiRoot(), null);
         ordersResponse.getResults().forEach(dataWriter::writeRow);
         for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
             ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
@@ -40,14 +36,14 @@ public class OrderDataExporter implements DataExporter {
         }
     }
 
-
     private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
-        return projectApiRoot.orders().get()
+        var request = projectApiRoot.orders().get()
                 .withLimit(QUERY_RESULT_LIMIT)
-                .withOffset(offset)
                 .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
+                .withSort("createdAt asc");
+        if (offset != null) {
+            request = request.withOffset(offset);
+        }
+        return request.executeBlocking().getBody();
     }
 }

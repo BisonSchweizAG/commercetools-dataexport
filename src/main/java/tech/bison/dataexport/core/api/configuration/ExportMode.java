@@ -15,16 +15,7 @@
  */
 package tech.bison.dataexport.core.api.configuration;
 
-import java.util.Objects;
-import java.util.List;
-
-public record DataExportProperties(List<String> fields, ExportMode exportMode) {
-
-    public DataExportProperties(List<String> fields) {
-        this(fields, ExportMode.FULL);
-    }
-
-    public DataExportProperties {
-        exportMode = Objects.requireNonNullElse(exportMode, ExportMode.FULL);
-    }
+public enum ExportMode {
+    FULL,
+    DELTA
 }

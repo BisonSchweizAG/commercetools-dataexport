@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
-import tech.bison.dataexport.core.api.executor.ExportableResourceType;
+import tech.bison.dataexport.core.api.configuration.ExportMode;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.verify;
 class DataExportIntegrationTest {
 
     @Test
-    void execute_ordersExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    void execute_ordersFullExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*].value"))
@@ -58,11 +58,54 @@ class DataExportIntegrationTest {
                 .withApiProperties(
                         new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
                                 "integrationtest"))
-                .withExportFields(ExportableResourceType.ORDER, List.of(
+                .withOrderExport(List.of(
                         "orderNumber",
                         "customerId",
                         "lineItems.id", "lineItems.quantity", "lineItems.variant.attributes.color",
-                        "lineItems.variant.attributes.supplierCategory.obj.key"))
+                        "lineItems.variant.attributes.supplierCategory.obj.key"), ExportMode.FULL)
+                .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
+                .withUploader(cloudStorageUploader)
+                .load();
+
+        var result = dataExport.execute();
+
+        assertThat(result.getResourceSummary("orders")).isEqualTo(ResourceExportResult.SUCCESS);
+
+        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(cloudStorageUploader)
+                .upload(Mockito.eq("orders/orders_2026_01_01_10_00_00.csv"), uploadedPayloadCaptor.capture());
+
+        String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
+        String expectedPayload = readResource("expected-payloads/data-export-orders.csv");
+        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
+    }
+
+    @Test
+    void execute_ordersDeltaExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+        stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/custom-objects/dataExport/dataExportKey"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("export-info-custom-object.json")));
+        stubFor(post(urlPathEqualTo("/integrationtest/custom-objects"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json")
+                        .withBodyFile("export-info-custom-object-updated.json")));
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("where", equalTo("lastModifiedAt > \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*].value"))
+                .willReturn(
+                        aResponse().withHeader("Content-Type", "application/json")
+                                .withBodyFile("orders-execute-single-page.json")));
+
+        ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
+        String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
+        var dataExport = DataExport.configure()
+                .withApiProperties(
+                        new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
+                                "integrationtest"))
+                .withOrderExport(List.of(
+                        "orderNumber",
+                        "customerId",
+                        "lineItems.id", "lineItems.quantity", "lineItems.variant.attributes.color",
+                        "lineItems.variant.attributes.supplierCategory.obj.key"), ExportMode.DELTA)
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
                 .withUploader(cloudStorageUploader)
                 .load();
@@ -93,7 +136,7 @@ class DataExportIntegrationTest {
                 .withApiProperties(
                         new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
                                 "integrationtest"))
-                .withExportFields(ExportableResourceType.CUSTOMER, List.of("id", "email", "customerNumber"))
+                .withCustomerExport(List.of("id", "email", "customerNumber"))
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
                 .withUploader(cloudStorageUploader)
                 .load();

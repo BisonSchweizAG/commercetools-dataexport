@@ -26,10 +26,12 @@ import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+import tech.bison.dataexport.core.internal.exporter.common.DeltaExportInfoRepository;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
-import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataDeltaExporter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataFullExporter;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
 import java.io.IOException;
@@ -118,12 +120,29 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
-     * Configures the fields to be exported for the given resource types.
+     * Configures an order export with the fields to be exported.
      */
-    public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields) {
+    public FluentConfiguration withOrderExport(List<String> exportFields, ExportMode exportMode) {
+        return withExportFields(ExportableResourceType.ORDER, exportFields, exportMode);
+    }
+
+    /**
+     * Configures a customer export with the fields to be exported.
+     */
+    public FluentConfiguration withCustomerExport(List<String> exportFields) {
+        return withExportFields(ExportableResourceType.CUSTOMER, exportFields, ExportMode.FULL);
+    }
+
+
+    /**
+     * Configures the fields and export mode to be exported for the given resource type.
+     */
+    public FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields,
+                                                ExportMode exportMode) {
         Objects.requireNonNull(resourceType, "resourceType must not be null.");
-        registerDataExportExecution(resourceType.getPluralName(), new DataExportProperties(exportFields),
-                createDataExporter(resourceType),
+        Objects.requireNonNull(exportMode, "exportMode must not be null.");
+        registerDataExportExecution(resourceType.getPluralName(), new DataExportProperties(exportFields, exportMode),
+                createDataExporter(resourceType, exportMode),
                 createDataWriterProvider(resourceType));
         return this;
     }
@@ -142,9 +161,10 @@ public class FluentConfiguration implements Configuration {
         return this;
     }
 
-    private DataExporter createDataExporter(ExportableResourceType resourceType) {
+    private DataExporter createDataExporter(ExportableResourceType resourceType, ExportMode exportMode) {
         return switch (resourceType) {
-            case ORDER -> new OrderDataExporter();
+            case ORDER ->
+                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new DeltaExportInfoRepository(JsonUtils.createObjectMapper()));
             case CUSTOMER -> new CustomerDataExporter();
         };
     }

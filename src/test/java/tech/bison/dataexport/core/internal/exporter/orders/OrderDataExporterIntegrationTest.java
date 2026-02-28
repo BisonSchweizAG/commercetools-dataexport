@@ -46,10 +46,10 @@ class OrderDataExporterIntegrationTest {
 
     @Test
     void export_allOrdersWithinPageLimit_fetchAllOrdersAndWrite() {
-        var orderDataExporter = new OrderDataExporter();
+        var orderDataExporter = new OrderDataFullExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("expand", equalTo(OrderDataFullExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
                 .willReturn(
                         aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
 
@@ -62,15 +62,15 @@ class OrderDataExporterIntegrationTest {
 
     @Test
     void export_allOrdersMultiplePages_fetchAllOrdersAndWrite() {
-        var orderDataExporter = new OrderDataExporter();
+        var orderDataExporter = new OrderDataFullExporter();
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("expand", equalTo(OrderDataFullExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("offset", equalTo("50"))
-                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("expand", equalTo(OrderDataFullExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
 
         var orderDataWriter = mock(DataWriter.class);
