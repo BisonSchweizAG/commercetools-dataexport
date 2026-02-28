@@ -26,7 +26,7 @@ import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
-import tech.bison.dataexport.core.internal.exporter.common.DeltaExportInfoRepository;
+import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
@@ -164,7 +164,7 @@ public class FluentConfiguration implements Configuration {
     private DataExporter createDataExporter(ExportableResourceType resourceType, ExportMode exportMode) {
         return switch (resourceType) {
             case ORDER ->
-                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new DeltaExportInfoRepository(JsonUtils.createObjectMapper()));
+                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new ExportInfoRepository(JsonUtils.createObjectMapper()));
             case CUSTOMER -> new CustomerDataExporter();
         };
     }

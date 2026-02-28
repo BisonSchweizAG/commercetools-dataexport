@@ -21,7 +21,7 @@ import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
-import tech.bison.dataexport.core.internal.exporter.common.DeltaExportInfoRepository;
+import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -32,15 +32,15 @@ public class OrderDataDeltaExporter implements DataExporter {
 
     static final Long QUERY_RESULT_LIMIT = 50L;
     static final String LINE_ITEMS_VARIANT_ATTRIBUTES = "lineItems[*].variant.attributes[*].value";
-    private final DeltaExportInfoRepository deltaExportInfoRepository;
+    private final ExportInfoRepository exportInfoRepository;
 
-    public OrderDataDeltaExporter(DeltaExportInfoRepository deltaExportInfoRepository) {
-        this.deltaExportInfoRepository = deltaExportInfoRepository;
+    public OrderDataDeltaExporter(ExportInfoRepository exportInfoRepository) {
+        this.exportInfoRepository = exportInfoRepository;
     }
 
     @Override
     public void export(Context context, DataWriter dataWriter) {
-        var deltaExportInfo = deltaExportInfoRepository.getCurrent(context);
+        var deltaExportInfo = exportInfoRepository.getCurrent(context);
         var lastExportDate = deltaExportInfo.exportTimestamps().get(getResourceKey());
         String whereClause = getWhereClause(lastExportDate);
 
@@ -54,7 +54,7 @@ public class OrderDataDeltaExporter implements DataExporter {
 
         var newTimestamps = new HashMap<>(deltaExportInfo.exportTimestamps());
         newTimestamps.put(getResourceKey(), ZonedDateTime.now(context.getClock().withZone(ZoneOffset.UTC)));
-        deltaExportInfoRepository.update(context, newTimestamps, deltaExportInfo.documentVersion());
+        exportInfoRepository.update(context, newTimestamps, deltaExportInfo.documentVersion());
     }
 
     private static String getResourceKey() {
