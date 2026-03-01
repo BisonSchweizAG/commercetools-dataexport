@@ -81,8 +81,8 @@ public class DataExportExecutor {
                 LOG.error("Error while executing data export for resource '{}'. Continue with next resource type.",
                         exportKey, ex);
             }
-            exportInfoRepository.update(context, newTimestamps, currentExportInfo.documentVersion());
         }
+        exportInfoRepository.update(context, newTimestamps, currentExportInfo.documentVersion());
         return dataExportResult;
     }
 
