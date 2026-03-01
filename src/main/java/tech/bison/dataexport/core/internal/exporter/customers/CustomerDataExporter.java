@@ -46,10 +46,10 @@ public class CustomerDataExporter implements DataExporter {
                 .withWithTotal(false)
                 .withSort("id asc");
         if (lastId != null) {
-            request = request.withWhere(String.format("id > \"%s\"", lastId));
+            request = request.addWhere(String.format("id > \"%s\"", lastId));
         }
         if (deltaLoadFilter != null) {
-            request = request.withWhere(deltaLoadFilter);
+            request = request.addWhere(deltaLoadFilter);
         }
         return request.executeBlocking().getBody();
     }

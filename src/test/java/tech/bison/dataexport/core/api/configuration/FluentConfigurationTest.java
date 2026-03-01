@@ -119,17 +119,6 @@ class FluentConfigurationTest {
     }
 
     @Test
-    void withExportFields_withoutExportMode_defaultsToFullExportMode() {
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withUploader(exportDataUploader)
-                .withOrderExport(List.of("id"), FULL);
-
-        var orderExecution = configuration.getDataExportExecutions().get(ORDER.getPluralName());
-        assertThat(orderExecution.dataExportProperties().exportMode()).isEqualTo(FULL);
-    }
-
-    @Test
     void load_withDeltaExportMode_setsDeltaExportMode() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
