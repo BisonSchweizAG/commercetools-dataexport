@@ -26,12 +26,10 @@ import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
 import tech.bison.dataexport.core.api.executor.ExportableResourceType;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
-import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWriter;
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
-import tech.bison.dataexport.core.internal.exporter.orders.OrderDataDeltaExporter;
-import tech.bison.dataexport.core.internal.exporter.orders.OrderDataFullExporter;
+import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
 import java.io.IOException;
@@ -138,7 +136,7 @@ public class FluentConfiguration implements Configuration {
         Objects.requireNonNull(resourceType, "resourceType must not be null.");
         Objects.requireNonNull(exportMode, "exportMode must not be null.");
         registerDataExportExecution(resourceType.getPluralName(), new DataExportProperties(exportFields, exportMode),
-                createDataExporter(resourceType, exportMode),
+                createDataExporter(resourceType),
                 createDataWriterProvider(resourceType));
         return this;
     }
@@ -201,10 +199,9 @@ public class FluentConfiguration implements Configuration {
     }
 
 
-    private DataExporter createDataExporter(ExportableResourceType resourceType, ExportMode exportMode) {
+    private DataExporter createDataExporter(ExportableResourceType resourceType) {
         return switch (resourceType) {
-            case ORDER ->
-                    exportMode == ExportMode.FULL ? new OrderDataFullExporter() : new OrderDataDeltaExporter(new ExportInfoRepository(JsonUtils.createObjectMapper()));
+            case ORDER -> new OrderDataExporter();
             case CUSTOMER -> new CustomerDataExporter();
         };
     }

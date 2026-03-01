@@ -52,7 +52,7 @@ class CustomerDataExporterIntegrationTest {
 
         var customerDataWriter = mock(DataWriter.class);
 
-        customerDataExporter.export(context, customerDataWriter);
+        customerDataExporter.export(context, null, customerDataWriter);
 
         verify(customerDataWriter).writeRow(any(Customer.class));
     }
@@ -72,7 +72,7 @@ class CustomerDataExporterIntegrationTest {
         ArgumentCaptor<Customer> customerCaptor = ArgumentCaptor.forClass(Customer.class);
         doNothing().when(customerDataWriter).writeRow(customerCaptor.capture());
 
-        customerDataExporter.export(context, customerDataWriter);
+        customerDataExporter.export(context, null, customerDataWriter);
 
         var allCapturedCustomers = customerCaptor.getAllValues();
         assertThat(allCapturedCustomers).hasSize(2);

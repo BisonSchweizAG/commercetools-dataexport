@@ -2,7 +2,6 @@
 
 With commercetools Data Export you can export data from commercetools to csv files and upload them to an upload
 destination.
-The exported data is always a full export of the corresponding resource type.
 
 The following commercetools resource types are supported:
 
@@ -32,7 +31,7 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 DataExport dataExport = DataExport.configure()
         .withApiRoot(projectApiRoot)
         .withOrderExport(List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"), ExportMode.FULL)
-        .withCustomerExport(List.of("id", "firstname", "lastName"))
+        .withCustomerExport(List.of("id", "firstName", "lastName"))
         .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
         .load();
 ```

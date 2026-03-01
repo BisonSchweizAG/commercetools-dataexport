@@ -26,7 +26,7 @@ public class CustomerDataExporter implements DataExporter {
     static final Long QUERY_RESULT_LIMIT = 50L;
 
     @Override
-    public void export(Context context, DataWriter dataWriter) {
+    public void export(Context context, String where, DataWriter dataWriter) {
         var customersResponse = context.getProjectApiRoot().customers().get().withLimit(QUERY_RESULT_LIMIT)
                 .withSort("createdAt desc")
                 .executeBlocking()

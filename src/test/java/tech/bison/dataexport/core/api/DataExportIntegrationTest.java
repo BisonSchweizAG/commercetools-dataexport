@@ -46,6 +46,7 @@ class DataExportIntegrationTest {
     @Test
     void execute_ordersFullExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
+        stubGetAndPostCustomObject();
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*].value"))
                 .willReturn(
@@ -80,14 +81,11 @@ class DataExportIntegrationTest {
         assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
     }
 
+
     @Test
     void execute_ordersDeltaExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
-        stubFor(get(urlPathEqualTo("/integrationtest/custom-objects/dataExport/dataExportKey"))
-                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("export-info-custom-object.json")));
-        stubFor(post(urlPathEqualTo("/integrationtest/custom-objects"))
-                .willReturn(aResponse().withHeader("Content-Type", "application/json")
-                        .withBodyFile("export-info-custom-object-updated.json")));
+        stubGetAndPostCustomObject();
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("where", equalTo("lastModifiedAt > \"2026-01-01T10:00:00Z\" and lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
                 .withQueryParam("expand", equalTo("lineItems[*].variant.attributes[*].value"))
@@ -126,6 +124,7 @@ class DataExportIntegrationTest {
     @Test
     void execute_customersExport_uploadExpectedCsvPayload(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         stubFor(post(urlEqualTo("/auth")).willReturn(aResponse().withBodyFile("token.json")));
+        stubGetAndPostCustomObject();
         stubFor(get(urlPathEqualTo("/integrationtest/customers"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json")
                         .withBodyFile("customers-single-page.json")));
@@ -154,6 +153,14 @@ class DataExportIntegrationTest {
         assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
 
         verify(getRequestedFor(urlPathEqualTo("/integrationtest/customers")));
+    }
+
+    private static void stubGetAndPostCustomObject() {
+        stubFor(get(urlPathEqualTo("/integrationtest/custom-objects/dataExport/dataExportKey"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("export-info-custom-object.json")));
+        stubFor(post(urlPathEqualTo("/integrationtest/custom-objects"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json")
+                        .withBodyFile("export-info-custom-object-updated.json")));
     }
 
     private String readResource(String resourcePath) throws IOException {

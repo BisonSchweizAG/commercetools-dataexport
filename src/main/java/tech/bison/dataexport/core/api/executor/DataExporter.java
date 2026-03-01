@@ -19,6 +19,12 @@ package tech.bison.dataexport.core.api.executor;
  * Interface for exporting data.
  */
 public interface DataExporter {
-
-    void export(Context context, DataWriter dataWriter);
+    /**
+     * Performs the data export.
+     *
+     * @param context         the context of the export.
+     * @param deltaLoadFilter if ExportMode.DELTA the deltaLoadFilter contains a where clause to apply when loading data otherwise null.
+     * @param dataWriter      the writer to write the exported data to.
+     */
+    void export(Context context, String deltaLoadFilter, DataWriter dataWriter);
 }
