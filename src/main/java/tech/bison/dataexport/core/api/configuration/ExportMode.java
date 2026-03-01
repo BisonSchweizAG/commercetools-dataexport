@@ -13,18 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tech.bison.dataexport.core.api.executor;
+package tech.bison.dataexport.core.api.configuration;
 
-/**
- * Interface for exporting data.
- */
-public interface DataExporter {
-    /**
-     * Performs the data export.
-     *
-     * @param context         the context of the export.
-     * @param deltaLoadFilter if ExportMode.DELTA the deltaLoadFilter contains a where clause to apply when loading data otherwise null.
-     * @param dataWriter      the writer to write the exported data to.
-     */
-    void export(Context context, String deltaLoadFilter, DataWriter dataWriter);
+public enum ExportMode {
+    FULL,
+    DELTA
 }

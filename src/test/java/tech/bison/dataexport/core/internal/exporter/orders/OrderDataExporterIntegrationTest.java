@@ -25,9 +25,8 @@ import tech.bison.dataexport.core.api.executor.DataWriter;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 
 @WireMockTest
 class OrderDataExporterIntegrationTest {
@@ -45,43 +44,55 @@ class OrderDataExporterIntegrationTest {
     }
 
     @Test
-    void export_allOrdersWithinPageLimit_fetchAllOrdersAndWrite() {
+    void export_fullExportWithMultiplePages_fetchAllOrdersAndWrite() {
         var orderDataExporter = new OrderDataExporter();
-
+        orderDataExporter.setQueryResultLimit(1L); // override page limit to keep payload files simple
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
                 .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
-                .willReturn(
-                        aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-single-page.json")));
-
-        var orderDataWriter = mock(DataWriter.class);
-
-        orderDataExporter.export(context, orderDataWriter);
-
-        verify(orderDataWriter).writeRow(any(Order.class));
-    }
-
-    @Test
-    void export_allOrdersMultiplePages_fetchAllOrdersAndWrite() {
-        var orderDataExporter = new OrderDataExporter();
-
-        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("sort", equalTo("id asc"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
 
         stubFor(get(urlPathEqualTo("/integrationtest/orders"))
-                .withQueryParam("offset", equalTo("50"))
+                .withQueryParam("where", equalTo("id > \"92f5a867-bf19-47ab-982c-6720a03a3921\""))
+                .withQueryParam("sort", equalTo("id asc"))
                 .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page2.json")));
+
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("where", equalTo("id > \"ef4b1425-3c39-4380-bff1-7d683b1e237f\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("empty-results.json")));
 
         var orderDataWriter = mock(DataWriter.class);
         ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
         doNothing().when(orderDataWriter).writeRow(orderCaptor.capture());
 
-        orderDataExporter.export(context, orderDataWriter);
+        orderDataExporter.export(context, null, orderDataWriter);
 
         var allCapturedOrders = orderCaptor.getAllValues();
         assertThat(allCapturedOrders).hasSize(2);
         assertThat(allCapturedOrders.get(0).getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
         assertThat(allCapturedOrders.get(1).getId()).isEqualTo("ef4b1425-3c39-4380-bff1-7d683b1e237f");
+    }
+
+    @Test
+    void export_deltaExport_fetchOrdersAndWrite() {
+        var orderDataExporter = new OrderDataExporter();
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("where", equalTo("lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
+
+        var orderDataWriter = mock(DataWriter.class);
+        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        doNothing().when(orderDataWriter).writeRow(orderCaptor.capture());
+
+        orderDataExporter.export(context, "lastModifiedAt <= \"2026-01-01T10:00:00Z\"", orderDataWriter);
+
+        var allCapturedOrders = orderCaptor.getAllValues();
+        assertThat(allCapturedOrders).hasSize(1);
+        assertThat(allCapturedOrders.getFirst().getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
     }
 }

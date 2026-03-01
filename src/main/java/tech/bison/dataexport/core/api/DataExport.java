@@ -15,12 +15,14 @@
  */
 package tech.bison.dataexport.core.api;
 
+import io.vrap.rmf.base.client.utils.json.JsonUtils;
 import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.configuration.FluentConfiguration;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.Context;
 import tech.bison.dataexport.core.api.executor.DataExportResult;
 import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
+import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 
 /**
  * Entry point for a data cleanup run.
@@ -33,7 +35,7 @@ public class DataExport {
     public DataExport(Configuration configuration) {
         this.configuration = configuration;
         dataExportExecutor = new DataExportExecutor(configuration.getExportDataUploaders(),
-                configuration.getDataExportExecutions());
+                configuration.getDataExportExecutions(), new ExportInfoRepository(JsonUtils.createObjectMapper()));
     }
 
     /**

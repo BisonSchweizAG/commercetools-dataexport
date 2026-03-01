@@ -2,7 +2,6 @@
 
 With commercetools Data Export you can export data from commercetools to csv files and upload them to an upload
 destination.
-The exported data is always a full export of the corresponding resource type.
 
 The following commercetools resource types are supported:
 
@@ -31,8 +30,8 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 ```java
 DataExport dataExport = DataExport.configure()
         .withApiRoot(projectApiRoot)
-        .withExportFields(ExportableResourceType.ORDER,
-                List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"))
+        .withOrderExport(List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"), ExportMode.FULL)
+        .withCustomerExport(List.of("id", "firstName", "lastName"))
         .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
         .load();
 ```
@@ -49,11 +48,11 @@ Example:
 ```java
 DataExport dataExport = DataExport.configure()
         // ...
-        .withExportFields(ExportableResourceType.ORDER, List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"))
+        .withOrderExport(List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"), ExportMode.FULL)
         .load();
 ```
 
-## Other configuration options
+## Configuration options
 
 ### Export child items
 
@@ -87,6 +86,13 @@ DataExport dataExport = DataExport.configure()
         .withMaxRecordsPerUpload(10000)
         .load();
 ```
+
+### Full and delta export
+
+The built-in resource types support full and delta export. You can pass the export mode to the export configuration.
+
+The export will hold the last exported timestamp in a custom-object with container name _dataExport_. The commercetools
+api key configured with the export must have the scope manage_key_value_documents.
 
 ### Register a custom exporter
 

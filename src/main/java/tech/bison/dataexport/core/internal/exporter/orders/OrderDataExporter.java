@@ -22,32 +22,41 @@ import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
 public class OrderDataExporter implements DataExporter {
-
-    static final Long QUERY_RESULT_LIMIT = 50L;
     static final String LINE_ITEMS_VARIANT_ATTRIBUTES = "lineItems[*].variant.attributes[*].value";
+    private Long queryResultLimit = 50L;
 
     @Override
-    public void export(Context context, DataWriter dataWriter) {
-        var ordersResponse = context.getProjectApiRoot().orders().get().withLimit(QUERY_RESULT_LIMIT)
-                .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
-        ordersResponse.getResults().forEach(dataWriter::writeRow);
-        for (int i = 1; i < ordersResponse.getTotalPages(); i++) {
-            ordersResponse = loadOrdersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
+    public void export(Context context, String deltaLoadFilter, DataWriter dataWriter) {
+        String lastId = null;
+        boolean hasMore = true;
+        while (hasMore) {
+            var ordersResponse = loadOrdersPage(context.getProjectApiRoot(), deltaLoadFilter, lastId);
             ordersResponse.getResults().forEach(dataWriter::writeRow);
+            if (!ordersResponse.getResults().isEmpty()) {
+                lastId = ordersResponse.getResults().getLast().getId();
+                hasMore = ordersResponse.getResults().size() == queryResultLimit;
+            } else {
+                hasMore = false;
+            }
         }
     }
 
-
-    private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, Long offset) {
-        return projectApiRoot.orders().get()
-                .withLimit(QUERY_RESULT_LIMIT)
-                .withOffset(offset)
+    private OrderPagedQueryResponse loadOrdersPage(ProjectApiRoot projectApiRoot, String deltaLoadFilter, String lastId) {
+        var request = projectApiRoot.orders().get()
+                .withLimit(queryResultLimit)
                 .withExpand(LINE_ITEMS_VARIANT_ATTRIBUTES)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
+                .withWithTotal(false)
+                .withSort("id asc");
+        if (lastId != null) {
+            request = request.addWhere(String.format("id > \"%s\"", lastId));
+        }
+        if (deltaLoadFilter != null) {
+            request = request.addWhere(deltaLoadFilter);
+        }
+        return request.executeBlocking().getBody();
+    }
+
+    void setQueryResultLimit(long queryResultLimit) {
+        this.queryResultLimit = queryResultLimit;
     }
 }

@@ -25,9 +25,8 @@ import tech.bison.dataexport.core.api.executor.DataWriter;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 
 @WireMockTest
 class CustomerDataExporterIntegrationTest {
@@ -44,39 +43,51 @@ class CustomerDataExporterIntegrationTest {
     }
 
     @Test
-    void export_allCustomersWithinPageLimit_fetchAllCustomersAndWrite() {
-        var customerDataExporter = new CustomerDataExporter();
-
-        stubFor(get(urlPathEqualTo("/integrationtest/customers"))
-                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("customers-single-page.json")));
-
-        var customerDataWriter = mock(DataWriter.class);
-
-        customerDataExporter.export(context, customerDataWriter);
-
-        verify(customerDataWriter).writeRow(any(Customer.class));
-    }
-
-    @Test
     void export_allCustomersMultiplePages_fetchAllCustomersAndWrite() {
         var customerDataExporter = new CustomerDataExporter();
-
+        customerDataExporter.setQueryResultLimit(1L); // override page limit to keep payload files simple
         stubFor(get(urlPathEqualTo("/integrationtest/customers"))
+                .withQueryParam("sort", equalTo("id asc"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("customers-page1.json")));
 
         stubFor(get(urlPathEqualTo("/integrationtest/customers"))
-                .withQueryParam("offset", equalTo("50"))
+                .withQueryParam("where", equalTo("id > \"f8ef5f9f-1760-4f1a-85e4-fc90e750efe2\""))
+                .withQueryParam("sort", equalTo("id asc"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("customers-page2.json")));
 
-        var customerDataWriter = mock(DataWriter.class);
-        ArgumentCaptor<Customer> customerCaptor = ArgumentCaptor.forClass(Customer.class);
-        doNothing().when(customerDataWriter).writeRow(customerCaptor.capture());
+        stubFor(get(urlPathEqualTo("/integrationtest/customers"))
+                .withQueryParam("where", equalTo("id > \"d76b9bca-8a13-46f7-a0a7-a4e7fb1d3272\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("empty-results.json")));
 
-        customerDataExporter.export(context, customerDataWriter);
+        var dataWriter = mock(DataWriter.class);
+        var customerCaptor = ArgumentCaptor.forClass(Customer.class);
+        doNothing().when(dataWriter).writeRow(customerCaptor.capture());
+
+        customerDataExporter.export(context, null, dataWriter);
 
         var allCapturedCustomers = customerCaptor.getAllValues();
         assertThat(allCapturedCustomers).hasSize(2);
         assertThat(allCapturedCustomers.get(0).getId()).isEqualTo("f8ef5f9f-1760-4f1a-85e4-fc90e750efe2");
         assertThat(allCapturedCustomers.get(1).getId()).isEqualTo("d76b9bca-8a13-46f7-a0a7-a4e7fb1d3272");
+    }
+
+    @Test
+    void export_deltaExport_fetchOrdersAndWrite() {
+        var customerDataExporter = new CustomerDataExporter();
+        stubFor(get(urlPathEqualTo("/integrationtest/customers"))
+                .withQueryParam("where", equalTo("lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("customers-page1.json")));
+
+        var dataWriter = mock(DataWriter.class);
+        var customerCaptor = ArgumentCaptor.forClass(Customer.class);
+        doNothing().when(dataWriter).writeRow(customerCaptor.capture());
+
+        customerDataExporter.export(context, "lastModifiedAt <= \"2026-01-01T10:00:00Z\"", dataWriter);
+
+        var allCapturedCustomers = customerCaptor.getAllValues();
+        assertThat(allCapturedCustomers).hasSize(1);
+        assertThat(allCapturedCustomers.getFirst().getId()).isEqualTo("f8ef5f9f-1760-4f1a-85e4-fc90e750efe2");
     }
 }

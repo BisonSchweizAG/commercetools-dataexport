@@ -1,0 +1,20 @@
+{
+  "id": "79b315c0-8e68-4294-b160-ec9d74f4d498",
+  "version": 287,
+  "versionModifiedAt": "2024-06-27T11:33:49.528Z",
+  "createdAt": "2024-02-22T15:35:02.851Z",
+  "lastModifiedAt": "2024-06-27T11:33:49.528Z",
+  "lastModifiedBy": {
+    "clientId": "bIZm7bMPLSftjBUNlq1FdwH3",
+    "isPlatformClient": false
+  },
+  "createdBy": {
+    "clientId": "bIZm7bMPLSftjBUNlq1FdwH3",
+    "isPlatformClient": false
+  },
+  "container": "dataExport",
+  "key": "dataExportKey",
+  "value": {
+    "orders": "2026-01-01T10:00:00.000Z"
+  }
+}
