@@ -62,7 +62,7 @@ class OrderDataExporterIntegrationTest {
                 .withQueryParam("where", equalTo("id > \"ef4b1425-3c39-4380-bff1-7d683b1e237f\""))
                 .withQueryParam("sort", equalTo("id asc"))
                 .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
-                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page-empty.json")));
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("empty-results.json")));
 
         var orderDataWriter = mock(DataWriter.class);
         ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);

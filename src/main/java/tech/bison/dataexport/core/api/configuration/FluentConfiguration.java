@@ -127,8 +127,8 @@ public class FluentConfiguration implements Configuration {
     /**
      * Configures a customer export with the fields to be exported.
      */
-    public FluentConfiguration withCustomerExport(List<String> exportFields) {
-        return withExportFields(ExportableResourceType.CUSTOMER, exportFields, ExportMode.FULL);
+    public FluentConfiguration withCustomerExport(List<String> exportFields, ExportMode exportMode) {
+        return withExportFields(ExportableResourceType.CUSTOMER, exportFields, exportMode);
     }
 
     private FluentConfiguration withExportFields(ExportableResourceType resourceType, List<String> exportFields,

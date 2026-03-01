@@ -22,28 +22,39 @@ import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 
 public class CustomerDataExporter implements DataExporter {
-
-    static final Long QUERY_RESULT_LIMIT = 50L;
+    private long queryResultLimit = 50L;
 
     @Override
-    public void export(Context context, String where, DataWriter dataWriter) {
-        var customersResponse = context.getProjectApiRoot().customers().get().withLimit(QUERY_RESULT_LIMIT)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
-        customersResponse.getResults().forEach(dataWriter::writeRow);
-        for (int i = 1; i < customersResponse.getTotalPages(); i++) {
-            customersResponse = loadCustomersPage(context.getProjectApiRoot(), i * QUERY_RESULT_LIMIT);
+    public void export(Context context, String deltaLoadFilter, DataWriter dataWriter) {
+        String lastId = null;
+        boolean hasMore = true;
+        while (hasMore) {
+            var customersResponse = loadCustomersPage(context.getProjectApiRoot(), deltaLoadFilter, lastId);
             customersResponse.getResults().forEach(dataWriter::writeRow);
+            if (!customersResponse.getResults().isEmpty()) {
+                lastId = customersResponse.getResults().getLast().getId();
+                hasMore = customersResponse.getResults().size() == queryResultLimit;
+            } else {
+                hasMore = false;
+            }
         }
     }
 
-    private CustomerPagedQueryResponse loadCustomersPage(ProjectApiRoot projectApiRoot, Long offset) {
-        return projectApiRoot.customers().get()
-                .withLimit(QUERY_RESULT_LIMIT)
-                .withOffset(offset)
-                .withSort("createdAt desc")
-                .executeBlocking()
-                .getBody();
+    private CustomerPagedQueryResponse loadCustomersPage(ProjectApiRoot projectApiRoot, String deltaLoadFilter, String lastId) {
+        var request = projectApiRoot.customers().get()
+                .withLimit(queryResultLimit)
+                .withWithTotal(false)
+                .withSort("id asc");
+        if (lastId != null) {
+            request = request.withWhere(String.format("id > \"%s\"", lastId));
+        }
+        if (deltaLoadFilter != null) {
+            request = request.withWhere(deltaLoadFilter);
+        }
+        return request.executeBlocking().getBody();
+    }
+
+    void setQueryResultLimit(long queryResultLimit) {
+        this.queryResultLimit = queryResultLimit;
     }
 }

@@ -113,7 +113,7 @@ class FluentConfigurationTest {
                 .withApiRoot(mock(ProjectApiRoot.class))
                 .withUploader(exportDataUploader)
                 .withOrderExport(List.of("id", "orderNumber"), FULL)
-                .withCustomerExport(List.of("id", "name"));
+                .withCustomerExport(List.of("id", "name"), FULL);
 
         assertThat(configuration.load()).isNotNull();
     }

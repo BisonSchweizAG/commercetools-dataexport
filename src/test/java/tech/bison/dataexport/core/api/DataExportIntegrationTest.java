@@ -135,7 +135,7 @@ class DataExportIntegrationTest {
                 .withApiProperties(
                         new CommercetoolsProperties("test", "test", baseUrl, baseUrl + "/auth",
                                 "integrationtest"))
-                .withCustomerExport(List.of("id", "email", "customerNumber"))
+                .withCustomerExport(List.of("id", "email", "customerNumber"), ExportMode.FULL)
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
                 .withUploader(cloudStorageUploader)
                 .load();

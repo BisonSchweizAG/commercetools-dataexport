@@ -89,8 +89,10 @@ DataExport dataExport = DataExport.configure()
 
 ### Full and delta export
 
-The built-in resource types do a full export by default. Additionally, the orders resource type supports delta exports.
-Pass the ExportMode.DELTA to the export configuration to enable it.
+The built-in resource types support full and delta export. You can pass the export mode to the export configuration.
+
+The export will hold the last exported timestamp in a custom-object with container name _dataExport_. The commercetools
+api key configured with the export must have the scope manage_key_value_documents.
 
 ### Register a custom exporter
 
