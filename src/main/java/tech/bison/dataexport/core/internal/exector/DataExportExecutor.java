@@ -25,7 +25,6 @@ import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -62,9 +61,10 @@ public class DataExportExecutor {
             LOG.info("Running data export for resource '{}'.", exportKey);
             try {
                 DataExportExecution dataExportExecution = entry.getValue();
+                LocalDateTime exportTime = LocalDateTime.now(context.getClock());
                 DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey,
                         dataExportProperties.fields(), context,
-                        dataExportExecution.dataWriterProvider());
+                        dataExportExecution.dataWriterProvider(), exportTime);
                 String whereClause = null;
                 var upperBound = ZonedDateTime.now(context.getClock().withZone(ZoneOffset.UTC));
                 if (dataExportProperties.exportMode() == ExportMode.DELTA) {
@@ -98,11 +98,11 @@ public class DataExportExecutor {
     private class ChunkedUploadDataWriterWrapper implements DataWriter {
 
         private final String exportKey;
-        private final Context context;
         private final List<String> fields;
         private final DataWriterProvider dataWriterProvider;
         private final Integer maxRecordsPerUpload;
         private final String outputFileExtension;
+        private final LocalDateTime exportTime;
         private final List<byte[]> completedChunks = new ArrayList<>();
         private ByteArrayOutputStream outputStream;
         private DataWriter dataWriter;
@@ -111,13 +111,14 @@ public class DataExportExecutor {
 
         private ChunkedUploadDataWriterWrapper(String exportKey,
                                                List<String> fields, Context context,
-                                               DataWriterProvider dataWriterProvider) {
+                                               DataWriterProvider dataWriterProvider,
+                                               LocalDateTime exportTime) {
             this.exportKey = exportKey;
             this.fields = fields;
-            this.context = context;
             this.dataWriterProvider = dataWriterProvider;
             this.maxRecordsPerUpload = context.getMaxRecordsPerUpload();
             this.outputFileExtension = context.getOutputFileExtension();
+            this.exportTime = exportTime;
             rotateChunk();
         }
 
@@ -170,15 +171,15 @@ public class DataExportExecutor {
                 Integer currentChunk = useChunkSuffix ? i + 1 : null;
                 byte[] bytes = completedChunks.get(i);
                 exportDataUploaderList.forEach(uploader -> uploader.upload(
-                        getBlobName(exportKey, context.getClock(), outputFileExtension, currentChunk), bytes));
+                        getBlobName(exportKey, exportTime, outputFileExtension, currentChunk), bytes));
             }
         }
 
-        private String getBlobName(String exportKey, Clock clock, String fileExtension,
+        private String getBlobName(String exportKey, LocalDateTime exportTime, String fileExtension,
                                    Integer chunkNumber) {
             String normalizedExtension = fileExtension.startsWith(".") ? fileExtension.substring(1) : fileExtension;
             String baseName = String.format("%s/%s_%s", exportKey, exportKey,
-                    LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")));
+                    exportTime.format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")));
             if (chunkNumber == null) {
                 return String.format("%s.%s", baseName, normalizedExtension);
             }

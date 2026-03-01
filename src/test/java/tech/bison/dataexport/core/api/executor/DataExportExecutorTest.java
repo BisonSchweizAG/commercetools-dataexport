@@ -27,9 +27,11 @@ import tech.bison.dataexport.core.internal.exporter.common.ExportInfo;
 import tech.bison.dataexport.core.internal.exporter.common.ExportInfoRepository;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Map;
 
@@ -101,7 +103,8 @@ class DataExportExecutorTest {
 
     @Test
     void execute_withMaxRecordsPerUploadAndLimitReached_uploadsChunkedFiles() {
-        when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
+        var clock = new SteppingClock(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC"), Duration.ofSeconds(1));
+        when(context.getClock()).thenReturn(clock);
         when(context.getMaxRecordsPerUpload()).thenReturn(2);
         when(context.getOutputFileExtension()).thenReturn("csv");
 
@@ -126,6 +129,39 @@ class DataExportExecutorTest {
                 any(byte[].class));
         verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_003.csv"),
                 any(byte[].class));
+    }
+
+    private static final class SteppingClock extends Clock {
+        private final Instant start;
+        private final ZoneId zone;
+        private final Duration step;
+        private final AtomicLong ticks;
+
+        private SteppingClock(Instant start, ZoneId zone, Duration step) {
+            this(start, zone, step, new AtomicLong(0L));
+        }
+
+        private SteppingClock(Instant start, ZoneId zone, Duration step, AtomicLong ticks) {
+            this.start = start;
+            this.zone = zone;
+            this.step = step;
+            this.ticks = ticks;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return zone;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return new SteppingClock(start, zone, step, ticks);
+        }
+
+        @Override
+        public Instant instant() {
+            return start.plus(step.multipliedBy(ticks.getAndIncrement()));
+        }
     }
 
     private DataExportExecutor createDataExportExecutor(DataExporter exporterSuccess, DataExporter exporterFailure) {
