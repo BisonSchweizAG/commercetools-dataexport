@@ -75,4 +75,24 @@ class OrderDataExporterIntegrationTest {
         assertThat(allCapturedOrders.get(0).getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
         assertThat(allCapturedOrders.get(1).getId()).isEqualTo("ef4b1425-3c39-4380-bff1-7d683b1e237f");
     }
+
+    @Test
+    void export_deltaExport_fetchOrdersAndWrite() {
+        var orderDataExporter = new OrderDataExporter();
+        stubFor(get(urlPathEqualTo("/integrationtest/orders"))
+                .withQueryParam("expand", equalTo(OrderDataExporter.LINE_ITEMS_VARIANT_ATTRIBUTES))
+                .withQueryParam("where", equalTo("lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("orders-page1.json")));
+
+        var orderDataWriter = mock(DataWriter.class);
+        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        doNothing().when(orderDataWriter).writeRow(orderCaptor.capture());
+
+        orderDataExporter.export(context, "lastModifiedAt <= \"2026-01-01T10:00:00Z\"", orderDataWriter);
+
+        var allCapturedOrders = orderCaptor.getAllValues();
+        assertThat(allCapturedOrders).hasSize(1);
+        assertThat(allCapturedOrders.getFirst().getId()).isEqualTo("92f5a867-bf19-47ab-982c-6720a03a3921");
+    }
 }

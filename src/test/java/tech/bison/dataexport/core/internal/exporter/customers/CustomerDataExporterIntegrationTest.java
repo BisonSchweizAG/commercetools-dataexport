@@ -60,15 +60,34 @@ class CustomerDataExporterIntegrationTest {
                 .withQueryParam("sort", equalTo("id asc"))
                 .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("empty-results.json")));
 
-        var customerDataWriter = mock(DataWriter.class);
-        ArgumentCaptor<Customer> customerCaptor = ArgumentCaptor.forClass(Customer.class);
-        doNothing().when(customerDataWriter).writeRow(customerCaptor.capture());
+        var dataWriter = mock(DataWriter.class);
+        var customerCaptor = ArgumentCaptor.forClass(Customer.class);
+        doNothing().when(dataWriter).writeRow(customerCaptor.capture());
 
-        customerDataExporter.export(context, null, customerDataWriter);
+        customerDataExporter.export(context, null, dataWriter);
 
         var allCapturedCustomers = customerCaptor.getAllValues();
         assertThat(allCapturedCustomers).hasSize(2);
         assertThat(allCapturedCustomers.get(0).getId()).isEqualTo("f8ef5f9f-1760-4f1a-85e4-fc90e750efe2");
         assertThat(allCapturedCustomers.get(1).getId()).isEqualTo("d76b9bca-8a13-46f7-a0a7-a4e7fb1d3272");
+    }
+
+    @Test
+    void export_deltaExport_fetchOrdersAndWrite() {
+        var customerDataExporter = new CustomerDataExporter();
+        stubFor(get(urlPathEqualTo("/integrationtest/customers"))
+                .withQueryParam("where", equalTo("lastModifiedAt <= \"2026-01-01T10:00:00Z\""))
+                .withQueryParam("sort", equalTo("id asc"))
+                .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("customers-page1.json")));
+
+        var dataWriter = mock(DataWriter.class);
+        var customerCaptor = ArgumentCaptor.forClass(Customer.class);
+        doNothing().when(dataWriter).writeRow(customerCaptor.capture());
+
+        customerDataExporter.export(context, "lastModifiedAt <= \"2026-01-01T10:00:00Z\"", dataWriter);
+
+        var allCapturedCustomers = customerCaptor.getAllValues();
+        assertThat(allCapturedCustomers).hasSize(1);
+        assertThat(allCapturedCustomers.getFirst().getId()).isEqualTo("f8ef5f9f-1760-4f1a-85e4-fc90e750efe2");
     }
 }
