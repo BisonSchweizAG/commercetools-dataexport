@@ -29,15 +29,17 @@ on [Maven Central](https://central.sonatype.com/search?namespace=tech.bison&name
 
 ```java
 DataExport dataExport = DataExport.configure()
-        .withApiRoot(projectApiRoot)
-        .withOrderExport(List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"), ExportMode.FULL)
-        .withCustomerExport(List.of("id", "firstName", "lastName"))
-        .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
-        .load();
+    .withApiRoot(projectApiRoot)
+    .withOrderExport(List.of("id", "orderNumber", "createdAt", "customerId", "totalPrice", "lineItems.id"),
+        ExportMode.FULL)
+    .withCustomerExport(List.of("id", "firstName", "lastName"), ExportMode.FULL)
+    .withGcpCloudStorageProperties(new GcpCloudStorageProperties("gcpProjectId", "bucketName", null))
+    .load();
 ```
 
-The configuration above will export all orders to the gcp cloud storage bucket in the following structure:
+The configuration above will export all orders and customers to the gcp cloud storage bucket in the following structure:
 /orders/orders_YYYY_MM_DD_HH_mm_ss.csv
+/customers/customers_YYYY_MM_DD_HH_mm_ss.csv
 
 Fields can be configured with the dot notation according to the commercetools api documentation.
 
@@ -47,9 +49,9 @@ Example:
 
 ```java
 DataExport dataExport = DataExport.configure()
-        // ...
-        .withOrderExport(List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"), ExportMode.FULL)
-        .load();
+    // ...
+    .withOrderExport(List.of("id", "totalPrice", "lineItems.taxedPrice.totalNet"), ExportMode.FULL)
+    .load();
 ```
 
 ## Configuration options
@@ -82,9 +84,9 @@ Example:
 
 ```java
 DataExport dataExport = DataExport.configure()
-        // ...
-        .withMaxRecordsPerUpload(10000)
-        .load();
+    // ...
+    .withMaxRecordsPerUpload(10000)
+    .load();
 ```
 
 ### Full and delta export
@@ -101,9 +103,9 @@ DataWriter interfaces and configure it as follows:
 
 ```java
 DataExport dataExport = DataExport.configure()
-        // ...
-        .withCustomExporter("someKey", new CustomExporter(), (fields, outputStream) -> new CustomDataWriter(outputStream))
-        .load();
+    // ...
+    .withCustomExporter("someKey", new CustomExporter(), (fields, outputStream) -> new CustomDataWriter(outputStream))
+    .load();
 ```
 
 The key will be used as a prefix for the exported files.
