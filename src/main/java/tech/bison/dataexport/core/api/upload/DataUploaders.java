@@ -15,28 +15,32 @@
  */
 package tech.bison.dataexport.core.api.upload;
 
+import com.google.cloud.storage.Storage;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
-import java.util.Objects;
-
 public final class DataUploaders {
 
-    /**
-     * Prevents instantiation of this utility class.
-     */
     private DataUploaders() {
     }
 
-    /**
+     /**
      * Creates an ExportDataUploader configured to upload files to Google Cloud Storage.
      *
      * @param gcpCloudStorageProperties configuration properties for GCP Cloud Storage
      * @return an ExportDataUploader that uploads files to GCP Cloud Storage
-     * @throws NullPointerException if gcpCloudStorageProperties is null
      */
     public static ExportDataUploader gcpCloudStorage(GcpCloudStorageProperties gcpCloudStorageProperties) {
-        Objects.requireNonNull(gcpCloudStorageProperties, "gcpCloudStorageProperties must not be null.");
         return new GcpFileUploader(gcpCloudStorageProperties);
+    }
+
+     /**
+     * Creates an ExportDataUploader configured to upload files to Google Cloud Storage.
+     *
+     * @param bucketName name of the bucking in the cloud storage
+     * @return an ExportDataUploader that uploads files to GCP Cloud Storage
+     */
+    public static ExportDataUploader gcpCloudStorage(String bucketName, Storage storage) {
+        return new GcpFileUploader(bucketName, storage);
     }
 }

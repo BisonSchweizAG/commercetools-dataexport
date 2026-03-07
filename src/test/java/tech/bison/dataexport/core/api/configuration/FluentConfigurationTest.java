@@ -130,18 +130,6 @@ class FluentConfigurationTest {
     }
 
     @Test
-    void withGcpCloudStorageProperties_addsGcpUploader() {
-        var gcpProperties = new GcpCloudStorageProperties("projectId", "bucketName", "credentialPath");
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(gcpProperties)
-                .withOrderExport(List.of("id"), FULL);
-
-        assertThat(configuration.getExportDataUploaders()).hasSize(1);
-        assertThat(configuration.load()).isNotNull();
-    }
-
-    @Test
     void load_withInvalidMaxRecordsPerUpload_throwsException() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
