@@ -24,10 +24,22 @@ public final class DataUploaders {
     private DataUploaders() {
     }
 
+     /**
+     * Creates an ExportDataUploader configured to upload files to Google Cloud Storage.
+     *
+     * @param gcpCloudStorageProperties configuration properties for GCP Cloud Storage
+     * @return an ExportDataUploader that uploads files to GCP Cloud Storage
+     */
     public static ExportDataUploader gcpCloudStorage(GcpCloudStorageProperties gcpCloudStorageProperties) {
         return new GcpFileUploader(gcpCloudStorageProperties);
     }
 
+     /**
+     * Creates an ExportDataUploader configured to upload files to Google Cloud Storage.
+     *
+     * @param bucketName name of the bucking in the cloud storage
+     * @return an ExportDataUploader that uploads files to GCP Cloud Storage
+     */
     public static ExportDataUploader gcpCloudStorage(String bucketName, Storage storage) {
         return new GcpFileUploader(bucketName, storage);
     }

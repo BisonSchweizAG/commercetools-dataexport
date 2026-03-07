@@ -91,7 +91,10 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
-     * Configure the commercetools api with the given api root.
+     * Set the commercetools API root to use for API requests.
+     *
+     * @param projectApiRoot the ProjectApiRoot to use for API requests
+     * @return this FluentConfiguration instance for method chaining
      */
     public FluentConfiguration withApiRoot(ProjectApiRoot projectApiRoot) {
         this.projectApiRoot = projectApiRoot;
@@ -99,7 +102,11 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
-     * Configure an uploader for the exported data. Built-in uploaders are available as static methods in DataUploaders class.
+     * Register an uploader to handle transfer of exported data.
+     *
+     * @param exportDataUploader the uploader to add; it will be used to upload generated export files. Built-in uploaders are available via the {@code DataUploaders} helper.
+     * @return this configuration instance for method chaining
+     * @throws NullPointerException if {@code exportDataUploader} is null
      */
     public FluentConfiguration withUploader(ExportDataUploader exportDataUploader) {
         Objects.requireNonNull(exportDataUploader, "exportDataUploader must not be null.");
