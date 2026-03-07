@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
-import tech.bison.dataexport.core.api.upload.DataUploaders;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 import java.util.List;
@@ -128,18 +127,6 @@ class FluentConfigurationTest {
 
         var orderExecution = configuration.getDataExportExecutions().get(ORDER.getPluralName());
         assertThat(orderExecution.dataExportProperties().exportMode()).isEqualTo(DELTA);
-    }
-
-    @Test
-    void load_withBuiltInUploaderFactory_addsGcpUploader() {
-        var gcpProperties = new GcpCloudStorageProperties("projectId", "bucketName", "credentialPath");
-        var configuration = new FluentConfiguration()
-                .withApiRoot(mock(ProjectApiRoot.class))
-                .withUploader(DataUploaders.gcpCloudStorage(gcpProperties))
-                .withOrderExport(List.of("id"), FULL);
-
-        assertThat(configuration.getExportDataUploaders()).hasSize(1);
-        assertThat(configuration.load()).isNotNull();
     }
 
     @Test

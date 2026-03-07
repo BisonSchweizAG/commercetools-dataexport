@@ -15,10 +15,9 @@
  */
 package tech.bison.dataexport.core.api.upload;
 
+import com.google.cloud.storage.Storage;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
-
-import java.util.Objects;
 
 public final class DataUploaders {
 
@@ -26,7 +25,10 @@ public final class DataUploaders {
     }
 
     public static ExportDataUploader gcpCloudStorage(GcpCloudStorageProperties gcpCloudStorageProperties) {
-        Objects.requireNonNull(gcpCloudStorageProperties, "gcpCloudStorageProperties must not be null.");
         return new GcpFileUploader(gcpCloudStorageProperties);
+    }
+
+    public static ExportDataUploader gcpCloudStorage(String bucketName, Storage storage) {
+        return new GcpFileUploader(bucketName, storage);
     }
 }

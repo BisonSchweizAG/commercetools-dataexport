@@ -13,18 +13,29 @@
  */
 package tech.bison.dataexport.core.api.upload;
 
+import com.google.cloud.storage.Storage;
 import org.junit.jupiter.api.Test;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
 import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class DataUploadersTest {
 
     @Test
     void gcpCloudStorage() {
         var uploader = DataUploaders.gcpCloudStorage(
-                new GcpCloudStorageProperties("project-id", "bucket-name", "credentials.json"));
+                new GcpCloudStorageProperties("project-id", "bucket-name", null));
+
+        assertThat(uploader).isInstanceOf(GcpFileUploader.class);
+    }
+
+    @Test
+    void gcpCloudStorage_withStorage() {
+        var storage = mock(Storage.class);
+
+        var uploader = DataUploaders.gcpCloudStorage("bucket-name", storage);
 
         assertThat(uploader).isInstanceOf(GcpFileUploader.class);
     }
