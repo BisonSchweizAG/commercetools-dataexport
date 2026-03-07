@@ -57,21 +57,12 @@ public class GcpFileUploader implements ExportDataUploader {
         var storageBuilder = StorageOptions.newBuilder().setProjectId(gcpCloudStorageProperties.projectId());
         try {
             if (gcpCloudStorageProperties.credentialPath() != null && !gcpCloudStorageProperties.credentialPath().isEmpty()) {
-                storageBuilder.setCredentials(loadCredentials(gcpCloudStorageProperties.credentialPath()));
+                storageBuilder.setCredentials(ServiceAccountCredentials.fromStream(new FileInputStream(gcpCloudStorageProperties.credentialPath()))
+                        .createScoped(CLOUD_PLATFORM_SCOPE));
             }
         } catch (IOException e) {
             throw new DataExportException("Error while creating google cloud storage client.", e);
         }
         return storageBuilder.build().getService();
-    }
-
-    private static ServiceAccountCredentials loadCredentials(String credentialPath) throws IOException {
-        try (var credentialStream = new FileInputStream(credentialPath)) {
-            ServiceAccountCredentials credentials = ServiceAccountCredentials.fromStream(credentialStream);
-            if (credentials.createScopedRequired()) {
-                return (ServiceAccountCredentials) credentials.createScoped(CLOUD_PLATFORM_SCOPE);
-            }
-            return credentials;
-        }
     }
 }
