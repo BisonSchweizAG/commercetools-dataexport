@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataExporter;
 import tech.bison.dataexport.core.api.executor.DataWriterProvider;
+import tech.bison.dataexport.core.api.upload.DataUploaders;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 import java.util.List;
@@ -130,11 +131,11 @@ class FluentConfigurationTest {
     }
 
     @Test
-    void withGcpCloudStorageProperties_addsGcpUploader() {
+    void load_withBuiltInUploaderFactory_addsGcpUploader() {
         var gcpProperties = new GcpCloudStorageProperties("projectId", "bucketName", "credentialPath");
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))
-                .withGcpCloudStorageProperties(gcpProperties)
+                .withUploader(DataUploaders.gcpCloudStorage(gcpProperties))
                 .withOrderExport(List.of("id"), FULL);
 
         assertThat(configuration.getExportDataUploaders()).hasSize(1);
