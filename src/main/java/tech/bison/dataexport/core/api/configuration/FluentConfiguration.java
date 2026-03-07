@@ -30,7 +30,6 @@ import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataCsvWri
 import tech.bison.dataexport.core.internal.exporter.customers.CustomerDataExporter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataCsvWriter;
 import tech.bison.dataexport.core.internal.exporter.orders.OrderDataExporter;
-import tech.bison.dataexport.core.internal.storage.gcp.GcpFileUploader;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -100,20 +99,11 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
-     * Configure an uploader for the exported data.
+     * Configure an uploader for the exported data. Built-in uploaders are available as static methods in DataUploaders class.
      */
     public FluentConfiguration withUploader(ExportDataUploader exportDataUploader) {
         Objects.requireNonNull(exportDataUploader, "exportDataUploader must not be null.");
         uploaderList.add(exportDataUploader);
-        return this;
-    }
-
-    /**
-     * Configure GCP Cloud Storage uploader with the given properties.
-     */
-    public FluentConfiguration withGcpCloudStorageProperties(GcpCloudStorageProperties gcpCloudStorageProperties) {
-        Objects.requireNonNull(gcpCloudStorageProperties, "gcpCloudStorageProperties must not be null.");
-        withUploader(new GcpFileUploader(gcpCloudStorageProperties));
         return this;
     }
 

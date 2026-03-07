@@ -14,12 +14,15 @@ package tech.bison.dataexport.core.api;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import tech.bison.dataexport.core.api.configuration.CommercetoolsProperties;
 import tech.bison.dataexport.core.api.configuration.ExportMode;
-import tech.bison.dataexport.core.api.upload.ExportDataUploader;
+import tech.bison.dataexport.core.api.upload.DataUploaders;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +41,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @WireMockTest
 class DataExportIntegrationTest {
@@ -53,7 +57,7 @@ class DataExportIntegrationTest {
                         aResponse().withHeader("Content-Type", "application/json")
                                 .withBodyFile("orders-execute-single-page.json")));
 
-        ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
+        Storage storage = mockStorage();
         String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
         var dataExport = DataExport.configure()
                 .withApiProperties(
@@ -65,20 +69,15 @@ class DataExportIntegrationTest {
                         "lineItems.id", "lineItems.quantity", "lineItems.variant.attributes.color",
                         "lineItems.variant.attributes.supplierCategory.obj.key"), ExportMode.FULL)
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
-                .withUploader(cloudStorageUploader)
+                .withUploader(DataUploaders.gcpCloudStorage("bucket-name", storage))
                 .load();
 
         var result = dataExport.execute();
 
         assertThat(result.getResourceSummary("orders")).isEqualTo(ResourceExportResult.SUCCESS);
 
-        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(cloudStorageUploader)
-                .upload(Mockito.eq("orders/orders_2026_01_01_10_00_00.csv"), uploadedPayloadCaptor.capture());
-
-        String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
         String expectedPayload = readResource("expected-payloads/data-export-orders.csv");
-        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
+        assertUploadedCsv(storage, "orders/orders_2026_01_01_10_00_00.csv", expectedPayload);
     }
 
 
@@ -93,7 +92,7 @@ class DataExportIntegrationTest {
                         aResponse().withHeader("Content-Type", "application/json")
                                 .withBodyFile("orders-execute-single-page.json")));
 
-        ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
+        Storage storage = mockStorage();
         String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
         var dataExport = DataExport.configure()
                 .withApiProperties(
@@ -105,20 +104,15 @@ class DataExportIntegrationTest {
                         "lineItems.id", "lineItems.quantity", "lineItems.variant.attributes.color",
                         "lineItems.variant.attributes.supplierCategory.obj.key"), ExportMode.DELTA)
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
-                .withUploader(cloudStorageUploader)
+                .withUploader(DataUploaders.gcpCloudStorage("bucket-name", storage))
                 .load();
 
         var result = dataExport.execute();
 
         assertThat(result.getResourceSummary("orders")).isEqualTo(ResourceExportResult.SUCCESS);
 
-        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(cloudStorageUploader)
-                .upload(Mockito.eq("orders/orders_2026_01_01_10_00_00.csv"), uploadedPayloadCaptor.capture());
-
-        String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
         String expectedPayload = readResource("expected-payloads/data-export-orders.csv");
-        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
+        assertUploadedCsv(storage, "orders/orders_2026_01_01_10_00_00.csv", expectedPayload);
     }
 
     @Test
@@ -129,7 +123,7 @@ class DataExportIntegrationTest {
                 .willReturn(aResponse().withHeader("Content-Type", "application/json")
                         .withBodyFile("customers-single-page.json")));
 
-        ExportDataUploader cloudStorageUploader = Mockito.mock(ExportDataUploader.class);
+        Storage storage = mockStorage();
         String baseUrl = wireMockRuntimeInfo.getHttpBaseUrl();
         var dataExport = DataExport.configure()
                 .withApiProperties(
@@ -137,22 +131,38 @@ class DataExportIntegrationTest {
                                 "integrationtest"))
                 .withCustomerExport(List.of("id", "email", "customerNumber"), ExportMode.FULL)
                 .withClock(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")))
-                .withUploader(cloudStorageUploader)
+                .withUploader(DataUploaders.gcpCloudStorage("bucket-name", storage))
                 .load();
 
         var result = dataExport.execute();
 
         assertThat(result.getResourceSummary("customers")).isEqualTo(ResourceExportResult.SUCCESS);
 
-        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(cloudStorageUploader)
-                .upload(Mockito.eq("customers/customers_2026_01_01_10_00_00.csv"), uploadedPayloadCaptor.capture());
-
-        String actualPayload = new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8);
         String expectedPayload = readResource("expected-payloads/data-export-customers.csv");
-        assertThat(normalizePayload(actualPayload)).isEqualTo(normalizePayload(expectedPayload));
+        assertUploadedCsv(storage, "customers/customers_2026_01_01_10_00_00.csv", expectedPayload);
 
         verify(getRequestedFor(urlPathEqualTo("/integrationtest/customers")));
+    }
+
+    private Storage mockStorage() {
+        var storage = Mockito.mock(Storage.class);
+        var blob = Mockito.mock(Blob.class);
+        when(storage.create(any(BlobInfo.class), any(byte[].class))).thenReturn(blob);
+        when(blob.getMd5ToHexString()).thenReturn("md5");
+        return storage;
+    }
+
+    private void assertUploadedCsv(Storage storage, String expectedObjectName, String expectedPayload) {
+        ArgumentCaptor<BlobInfo> blobInfoCaptor = ArgumentCaptor.forClass(BlobInfo.class);
+        ArgumentCaptor<byte[]> uploadedPayloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        Mockito.verify(storage).create(blobInfoCaptor.capture(), uploadedPayloadCaptor.capture());
+
+        BlobInfo blobInfo = blobInfoCaptor.getValue();
+        assertThat(blobInfo.getBlobId().getBucket()).isEqualTo("bucket-name");
+        assertThat(blobInfo.getBlobId().getName()).isEqualTo(expectedObjectName);
+        assertThat(blobInfo.getContentType()).isEqualTo("text/csv");
+        assertThat(normalizePayload(new String(uploadedPayloadCaptor.getValue(), StandardCharsets.UTF_8)))
+                .isEqualTo(normalizePayload(expectedPayload));
     }
 
     private static void stubGetAndPostCustomObject() {
