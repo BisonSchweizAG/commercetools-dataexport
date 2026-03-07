@@ -15,7 +15,7 @@
  */
 package tech.bison.dataexport.core.internal.storage.gcp;
 
-import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +31,7 @@ import java.util.Objects;
 public class GcpFileUploader implements ExportDataUploader {
 
     private static final Logger LOG = LoggerFactory.getLogger(GcpFileUploader.class);
+    private static final String CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
     private final String bucketName;
     private final Storage storage;
 
@@ -56,14 +57,21 @@ public class GcpFileUploader implements ExportDataUploader {
         var storageBuilder = StorageOptions.newBuilder().setProjectId(gcpCloudStorageProperties.projectId());
         try {
             if (gcpCloudStorageProperties.credentialPath() != null && !gcpCloudStorageProperties.credentialPath().isEmpty()) {
-                var credentials = GoogleCredentials.fromStream(new FileInputStream(gcpCloudStorageProperties.credentialPath()))
-                        .createScoped("https://www.googleapis.com/auth/cloud-platform");
-                credentials.refreshIfExpired();
-                storageBuilder.setCredentials(credentials);
+                storageBuilder.setCredentials(loadCredentials(gcpCloudStorageProperties.credentialPath()));
             }
         } catch (IOException e) {
             throw new DataExportException("Error while creating google cloud storage client.", e);
         }
         return storageBuilder.build().getService();
+    }
+
+    private static ServiceAccountCredentials loadCredentials(String credentialPath) throws IOException {
+        try (var credentialStream = new FileInputStream(credentialPath)) {
+            ServiceAccountCredentials credentials = ServiceAccountCredentials.fromStream(credentialStream);
+            if (credentials.createScopedRequired()) {
+                return (ServiceAccountCredentials) credentials.createScoped(CLOUD_PLATFORM_SCOPE);
+            }
+            return credentials;
+        }
     }
 }
