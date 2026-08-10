@@ -16,7 +16,8 @@
 package tech.bison.dataexport.core.internal.exporter.common;
 
 import com.commercetools.api.models.common.CentPrecisionMoney;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
+
 
 import java.util.Collections;
 import java.util.List;

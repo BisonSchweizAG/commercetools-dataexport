@@ -22,8 +22,6 @@ package tech.bison.dataexport.core.internal.exporter.common;
 import com.commercetools.api.client.ProjectApiRoot;
 import com.commercetools.api.models.custom_object.CustomObject;
 import com.commercetools.api.models.custom_object.CustomObjectDraft;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vrap.rmf.base.client.error.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +32,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.configuration.Configuration;
 import tech.bison.dataexport.core.api.executor.Context;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.ZonedDateTime;
 import java.util.Map;

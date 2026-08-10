@@ -1,10 +1,10 @@
 package tech.bison.dataexport.core.internal.exporter.common;
 
 import com.commercetools.api.models.custom_object.CustomObjectDraft;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vrap.rmf.base.client.error.NotFoundException;
 import tech.bison.dataexport.core.api.executor.Context;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
