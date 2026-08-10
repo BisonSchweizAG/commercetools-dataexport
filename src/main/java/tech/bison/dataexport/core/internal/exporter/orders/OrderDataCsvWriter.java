@@ -17,12 +17,12 @@ package tech.bison.dataexport.core.internal.exporter.orders;
 
 import com.commercetools.api.models.common.BaseResource;
 import com.commercetools.api.models.order.Order;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVPrinter;
 import tech.bison.dataexport.core.api.exception.DataExportException;
 import tech.bison.dataexport.core.api.executor.DataWriter;
 import tech.bison.dataexport.core.internal.exporter.common.CsvWriterSupport;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
