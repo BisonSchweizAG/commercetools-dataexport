@@ -37,5 +37,7 @@ public interface Configuration {
 
     Integer getMaxRecordsPerUpload();
 
+    boolean isCleanupPreviousExportDataEnabled();
+
     Clock getClock();
 }

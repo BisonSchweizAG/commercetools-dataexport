@@ -15,7 +15,11 @@
  */
 package tech.bison.dataexport.core.api.upload;
 
+import java.util.List;
+
 public interface ExportDataUploader {
 
     void upload(String name, byte[] data);
+
+    void cleanupPreviousExportData(List<String> latestObjectNames);
 }
