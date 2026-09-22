@@ -45,6 +45,7 @@ public class FluentConfiguration implements Configuration {
     private Clock clock;
     private String outputFileExtension = "csv";
     private Integer maxRecordsPerUpload;
+    private boolean cleanupPreviousExportDataEnabled;
     private final List<ExportDataUploader> uploaderList = new ArrayList<>();
     private final Map<String, DataExportExecution> dataExportExecutionMap = new HashMap<>();
 
@@ -195,6 +196,14 @@ public class FluentConfiguration implements Configuration {
         return this;
     }
 
+    /**
+     * Enables deletion of files from previous successful full exports after the latest files have been uploaded.
+     */
+    public FluentConfiguration withCleanupPreviousExportData() {
+        this.cleanupPreviousExportDataEnabled = true;
+        return this;
+    }
+
 
     private DataExporter createDataExporter(ExportableResourceType resourceType) {
         return switch (resourceType) {
@@ -236,6 +245,11 @@ public class FluentConfiguration implements Configuration {
     @Override
     public Integer getMaxRecordsPerUpload() {
         return maxRecordsPerUpload;
+    }
+
+    @Override
+    public boolean isCleanupPreviousExportDataEnabled() {
+        return cleanupPreviousExportDataEnabled;
     }
 
     @Override

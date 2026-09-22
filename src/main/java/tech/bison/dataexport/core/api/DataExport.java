@@ -35,7 +35,8 @@ public class DataExport {
     public DataExport(Configuration configuration) {
         this.configuration = configuration;
         dataExportExecutor = new DataExportExecutor(configuration.getExportDataUploaders(),
-                configuration.getDataExportExecutions(), new ExportInfoRepository(JsonUtils.createObjectMapper()));
+                configuration.getDataExportExecutions(), new ExportInfoRepository(JsonUtils.createObjectMapper()),
+                configuration.isCleanupPreviousExportDataEnabled());
     }
 
     /**
