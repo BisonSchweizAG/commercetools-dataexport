@@ -18,6 +18,7 @@ package tech.bison.dataexport.core.internal.storage.gcp;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
+import com.google.api.gax.paging.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.bison.dataexport.core.api.configuration.GcpCloudStorageProperties;
@@ -29,6 +30,7 @@ import java.nio.file.Path;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +50,26 @@ class GcpFileUploaderTest {
         uploader.upload("export.csv", "data".getBytes());
 
         verify(storage).create(any(), eq("data".getBytes()));
+    }
+
+    @Test
+    void cleanupPreviousExportData_deletesMatchingOldObjectsAndRetainsLatestObjects() {
+        var storage = mock(Storage.class);
+        @SuppressWarnings("unchecked")
+        Page<Blob> page = mock(Page.class);
+        var oldBlob = mock(Blob.class);
+        var latestBlob = mock(Blob.class);
+        when(oldBlob.getName()).thenReturn("orders/orders_2025_12_31_10_00_00.csv");
+        when(latestBlob.getName()).thenReturn("orders/orders_2026_01_01_10_00_00.csv");
+        when(storage.list(eq("bucket-name"), any(Storage.BlobListOption.class))).thenReturn(page);
+        when(page.iterateAll()).thenReturn(List.of(oldBlob, latestBlob));
+
+        var uploader = new GcpFileUploader("bucket-name", storage);
+        uploader.cleanupPreviousExportData(List.of("orders/orders_2026_01_01_10_00_00.csv"));
+
+        verify(oldBlob).delete();
+        verify(latestBlob, never()).delete();
+        verify(storage).list(eq("bucket-name"), any(Storage.BlobListOption.class));
     }
 
     @Test

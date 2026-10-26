@@ -155,6 +155,13 @@ class FluentConfigurationTest {
     }
 
     @Test
+    void withCleanupPreviousExportData_enablesCleanup() {
+        var configuration = new FluentConfiguration().withCleanupPreviousExportData();
+
+        assertThat(configuration.isCleanupPreviousExportDataEnabled()).isTrue();
+    }
+
+    @Test
     void load_withCustomExporter_registersCustomExecution() {
         var configuration = new FluentConfiguration()
                 .withApiRoot(mock(ProjectApiRoot.class))

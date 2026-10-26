@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.bison.dataexport.core.api.configuration.DataExportProperties;
+import tech.bison.dataexport.core.api.configuration.ExportMode;
 import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 import tech.bison.dataexport.core.internal.exector.DataExportExecutor;
 import tech.bison.dataexport.core.internal.exporter.common.ExportInfo;
@@ -129,6 +130,46 @@ class DataExportExecutorTest {
                 any(byte[].class));
         verify(exportDataUploader, times(1)).upload(eq("orders/orders_2026_01_01_10_00_00_part_003.csv"),
                 any(byte[].class));
+    }
+
+    @Test
+    void execute_withCleanupEnabledAndFullExport_cleansUpWhileRetainingAllLatestChunks() {
+        when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
+        when(context.getMaxRecordsPerUpload()).thenReturn(1);
+        when(context.getOutputFileExtension()).thenReturn("csv");
+        var exporter = mock(DataExporter.class);
+        doAnswer(invocation -> {
+            DataWriter writer = invocation.getArgument(2);
+            writer.writeRow(mock(BaseResource.class));
+            writer.writeRow(mock(BaseResource.class));
+            return null;
+        }).when(exporter).export(any(), any(), any());
+        var execution = new DataExportExecution(new DataExportProperties(List.of(), ExportMode.FULL), exporter,
+                (_, _) -> dataWriter);
+        var executor = new DataExportExecutor(List.of(exportDataUploader), Map.of("orders", execution),
+                exportInfoRepository, true);
+
+        executor.execute(context);
+
+        verify(exportDataUploader).cleanupPreviousExportData(List.of(
+                "orders/orders_2026_01_01_10_00_00_part_001.csv",
+                "orders/orders_2026_01_01_10_00_00_part_002.csv"));
+    }
+
+    @Test
+    void execute_withCleanupEnabledAndDeltaExport_doesNotCleanUp() {
+        when(context.getClock()).thenReturn(Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneId.of("UTC")));
+        when(context.getMaxRecordsPerUpload()).thenReturn(null);
+        when(context.getOutputFileExtension()).thenReturn("csv");
+        var exporter = mock(DataExporter.class);
+        var execution = new DataExportExecution(new DataExportProperties(List.of(), ExportMode.DELTA), exporter,
+                (_, _) -> dataWriter);
+        var executor = new DataExportExecutor(List.of(exportDataUploader), Map.of("orders", execution),
+                exportInfoRepository, true);
+
+        executor.execute(context);
+
+        verify(exportDataUploader, never()).cleanupPreviousExportData(any());
     }
 
     private static final class SteppingClock extends Clock {

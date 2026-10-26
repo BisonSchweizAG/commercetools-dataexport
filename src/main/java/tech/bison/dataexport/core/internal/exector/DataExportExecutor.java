@@ -43,12 +43,22 @@ public class DataExportExecutor {
     private final List<ExportDataUploader> exportDataUploaderList;
     private final Map<String, DataExportExecution> dataExportExecutions;
     private final ExportInfoRepository exportInfoRepository;
+    private final boolean cleanupPreviousExportDataEnabled;
 
     public DataExportExecutor(List<ExportDataUploader> exportDataUploaderList,
-                              Map<String, DataExportExecution> dataExportExecutions, ExportInfoRepository exportInfoRepository) {
+                              Map<String, DataExportExecution> dataExportExecutions,
+                              ExportInfoRepository exportInfoRepository) {
+        this(exportDataUploaderList, dataExportExecutions, exportInfoRepository, false);
+    }
+
+    public DataExportExecutor(List<ExportDataUploader> exportDataUploaderList,
+                              Map<String, DataExportExecution> dataExportExecutions,
+                              ExportInfoRepository exportInfoRepository,
+                              boolean cleanupPreviousExportDataEnabled) {
         this.exportDataUploaderList = exportDataUploaderList;
         this.dataExportExecutions = dataExportExecutions;
         this.exportInfoRepository = exportInfoRepository;
+        this.cleanupPreviousExportDataEnabled = cleanupPreviousExportDataEnabled;
     }
 
     public DataExportResult execute(Context context) {
@@ -60,9 +70,9 @@ public class DataExportExecutor {
             var dataExportProperties = entry.getValue().dataExportProperties();
             LOG.info("Running data export for resource '{}'.", exportKey);
             try {
-                DataExportExecution dataExportExecution = entry.getValue();
-                LocalDateTime exportTime = LocalDateTime.now(context.getClock());
-                DataWriter dataWriter = new ChunkedUploadDataWriterWrapper(exportKey,
+                var dataExportExecution = entry.getValue();
+                var exportTime = LocalDateTime.now(context.getClock());
+                var dataWriter = new ChunkedUploadDataWriterWrapper(exportKey,
                         dataExportProperties.fields(), context,
                         dataExportExecution.dataWriterProvider(), exportTime);
                 String whereClause = null;
@@ -73,6 +83,10 @@ public class DataExportExecutor {
                 }
                 dataExportExecution.dataExporter().export(context, whereClause, dataWriter);
                 dataWriter.flush();
+                if (cleanupPreviousExportDataEnabled && dataExportProperties.exportMode() == ExportMode.FULL) {
+                    exportDataUploaderList.forEach(uploader ->
+                            uploader.cleanupPreviousExportData(dataWriter.getUploadedObjectNames()));
+                }
                 newTimestamps.put(exportKey, upperBound);
                 dataExportResult.addResult(exportKey, SUCCESS);
                 LOG.info("Data export finished successfully for resource '{}'.", exportKey);
@@ -108,6 +122,7 @@ public class DataExportExecutor {
         private DataWriter dataWriter;
         private int recordCountInChunk;
         private boolean flushed;
+        private final List<String> uploadedObjectNames = new ArrayList<>();
 
         private ChunkedUploadDataWriterWrapper(String exportKey,
                                                List<String> fields, Context context,
@@ -170,9 +185,14 @@ public class DataExportExecutor {
             for (int i = 0; i < completedChunks.size(); i++) {
                 Integer currentChunk = useChunkSuffix ? i + 1 : null;
                 byte[] bytes = completedChunks.get(i);
-                exportDataUploaderList.forEach(uploader -> uploader.upload(
-                        getBlobName(exportKey, exportTime, outputFileExtension, currentChunk), bytes));
+                String objectName = getBlobName(exportKey, exportTime, outputFileExtension, currentChunk);
+                exportDataUploaderList.forEach(uploader -> uploader.upload(objectName, bytes));
+                uploadedObjectNames.add(objectName);
             }
+        }
+
+        private List<String> getUploadedObjectNames() {
+            return List.copyOf(uploadedObjectNames);
         }
 
         private String getBlobName(String exportKey, LocalDateTime exportTime, String fileExtension,

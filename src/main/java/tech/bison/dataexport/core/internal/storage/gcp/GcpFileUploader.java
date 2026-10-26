@@ -25,7 +25,10 @@ import tech.bison.dataexport.core.api.upload.ExportDataUploader;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class GcpFileUploader implements ExportDataUploader {
@@ -51,6 +54,34 @@ public class GcpFileUploader implements ExportDataUploader {
         Blob blob = storage.create(blobInfo, data);
         LOG.info("Created blob '{}' in bucket '{}'", name, bucketName);
         LOG.debug("The hash of the created blob is {}", blob.getMd5ToHexString());
+    }
+
+    @Override
+    public void cleanupPreviousExportData(List<String> latestObjectNames) {
+        if (latestObjectNames.isEmpty()) {
+            return;
+        }
+        var retainedObjectNames = Set.copyOf(latestObjectNames);
+        var exportPrefixes = latestObjectNames.stream()
+                .map(GcpFileUploader::getExportPrefix)
+                .collect(Collectors.toSet());
+        exportPrefixes.forEach(prefix -> storage.list(bucketName, Storage.BlobListOption.prefix(prefix))
+                .iterateAll().forEach(blob -> {
+                    if (!retainedObjectNames.contains(blob.getName())) {
+                        blob.delete();
+                        LOG.info("Deleted blob '{}' from bucket '{}'", blob.getName(), bucketName);
+                    }
+                }));
+    }
+
+    private static String getExportPrefix(String objectName) {
+        int directorySeparator = objectName.lastIndexOf('/');
+        int nameSeparator = objectName.indexOf('_', directorySeparator + 1);
+        if (nameSeparator < 0) {
+            throw new IllegalArgumentException("Export object name does not contain the expected '_' separator: "
+                    + objectName);
+        }
+        return objectName.substring(0, nameSeparator + 1);
     }
 
     private static Storage createStorage(GcpCloudStorageProperties gcpCloudStorageProperties) {
