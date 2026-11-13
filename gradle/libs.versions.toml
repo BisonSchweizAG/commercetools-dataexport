@@ -2,7 +2,7 @@
 apache-commons-csv = '1.14.1'
 assertj = '3.27.7'
 commercetools = '20.4.0'
-cyclonedx-bom = '3.6.0'
+cyclonedx-bom = '3.6.1'
 google-cloud-storage = '2.78.0'
 logback = '1.6.6'
 junit-jupiter = '6.1.3'
